@@ -3,8 +3,8 @@ library(haven)
 library(dplyr)
 library(GGally)
 
-
-sec2a <- read_dta("./raw_data/sec2a.dta")  #data about education
+sec0a <- read_dta("raw_data/sec0a.dta")  #data about survey info
+sec2a <- read_dta("raw_data/sec2a.dta")  #data about education
 summary(sec2a)
 count(sec2a)
 
