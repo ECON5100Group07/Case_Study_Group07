@@ -32,12 +32,13 @@ colSums(is.na(agg2))
 # map land size units to acre with a multiplier (s8bq4bm)
 # the "Other" unit is treated as NA
 land_size_unit_map <- data.frame("s8bq4b" = as.double(c(1:4)),
-                                 "s8bq4bm" = c(1, 0.00625, 0.00758, NA))
+                                 "s8bq4bm" = c(1, 1, 1/9, NA))
 
 # convert all land size to acre
 land_size_info <- sec8b %>%
   select(clust, nh, s8bq4a, s8bq4b) %>%
-  mutate(s8bq4b = ifelse(s8bq4b > 1e+100, NA, s8bq4b)) %>%
+  mutate(s8bq4a = ifelse(s8bq4a > 1e+100, NA, s8bq4a),
+         s8bq4b = ifelse(s8bq4b > 1e+100, NA, s8bq4b)) %>%
   left_join(land_size_unit_map) %>%
   # s8bq4ac is corrected s8bq4a, which is land size in acre
   mutate(s8bq4ac = s8bq4a * s8bq4bm) %>%
@@ -45,17 +46,17 @@ land_size_info <- sec8b %>%
   replace(., is.na(.), 0) %>%
   group_by(clust, nh) %>%
   summarise(landSize = sum(s8bq4ac)) %>%
-  # convert 0 land size back to NA because it will be used as denominator
-  mutate(landSize = ifelse(landSize == 0, NA, landSize))
+  filter(landSize >= 1)
 
 # calculate household agri profit per acre
 # because the above correlations are both 1,
 # use only "agri1" and "agri2" to calculate agricultural profit
 hh_profit_info <- agg2 %>%
+  select(clust, nh, agri1, hhagdepn) %>%
+  filter(agri1 != 0) %>%
   inner_join(land_size_info, by = c("clust", "nh")) %>%
-  transmute(clust = clust, nh = nh,
-            profit = (agri1 + agri2 - hhagdepn) / landSize) %>%
-  filter(!is.na(profit))
+  mutate(profit = (agri1 - hhagdepn) / landSize) %>%
+  select(-agri1, -hhagdepn, -landSize)
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit"
 
@@ -92,58 +93,31 @@ hh_basic_info <- sec0a %>%
 ## ----tidy household member information---------------------------------------------------
 # household member information
 hhm_info <- sec1 %>%
-  select(clust, nh, pid, sex, agey) %>%
-  filter(agey >= 15 & agey <= 60) %>%
-  mutate(sex = factor(sex,
-               levels = as.character(c(1,2)),
-               labels = c("Male", "Female"))
-         )
+  select(clust, nh, pid, sex, agey, rel) %>%
+  mutate(female = sex == 2,
+         age = agey) %>%
+  select(-sex, -agey)
 
 # household member education information
 # map education qualification to education level
 educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
-                             "s2aq3l" = c(0, 1, rep(2, 4), rep(3, 8), 1.5))
+                             "s2aq3l" = c(1, 2, rep(3, 4), rep(4, 8), 5))
 
 hhm_educ <- sec2a %>%
-  select(clust, nh, pid, s2aq3) %>%
+  select(clust, nh, pid, s2aq1, s2aq3) %>%
+  # if never attended school (s2aq1 == 2), set education to None (s2aq3 = 1)
+  mutate(s2aq3 = ifelse(s2aq1 == 2, 1, s2aq3)) %>%
   left_join(educ_level_map) %>%
-  select(-s2aq3) %>%
-  replace(., is.na(.), 0)
-  # mutate(s2aq3l = factor(s2aq3l,
-  #                        levels = as.character(c(1:5)),
-  #                        labels = c("None", "Basic Education", "Secondary Education",
-  #                                   "Tertiary Education", "Other")))
+  mutate(educ = factor(s2aq3l,
+                         levels = as.character(c(1:5)),
+                         labels = c("None", "Basic Education", "Secondary Education",
+                                    "Tertiary Education", "Other"))) %>%
+  select(-s2aq1, -s2aq3, -s2aq3l)
 
-# hh_member_info <- hhm_info %>%
-#   full_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-#   group_by(clust, nh) %>%
-#   summarise(malePercent = sum(sex == "Male")/n(),
-#             femalePercent = sum(sex == "Female")/n(),
-#             avgAge = mean(agey),
-#             noneEducPercent = sum(s2aq3l == "None", na.rm = TRUE)/n(),
-#             basicEducPercent = sum(s2aq3l == "Basic Education", na.rm = TRUE)/n(),
-#             secEducPercent = sum(s2aq3l == "Secondary Education", na.rm = TRUE)/n(),
-#             terEducPercent = sum(s2aq3l == "Tertiary Education", na.rm = TRUE)/n(),
-#             otherEducPercent = sum(s2aq3l == "Other", na.rm = TRUE)/n())
-# hh_member_info <- hhm_info %>%
-#   left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-#   group_by(clust, nh) %>%
-#   summarise(maleCount = sum(sex == "Male"),
-#             femaleCount = sum(sex == "Female"),
-#             avgAge = mean(agey),
-#             noneEducCount = sum(s2aq3l == "None", na.rm = TRUE),
-#             basicEducCount = sum(s2aq3l == "Basic Education", na.rm = TRUE),
-#             secEducCount = sum(s2aq3l == "Secondary Education", na.rm = TRUE),
-#             terEducCount = sum(s2aq3l == "Tertiary Education", na.rm = TRUE),
-#             otherEducCount = sum(s2aq3l == "Other", na.rm = TRUE))
-hh_member_info <- hhm_info %>%
-  left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-  replace(., is.na(.), 0) %>%
-  group_by(clust, nh) %>%
-  summarise(maleCount = sum(sex == "Male"),
-            femaleCount = sum(sex == "Female"),
-            avgAge = mean(agey),
-            avgEdu = mean(s2aq3l))
+hh_head_info <- hhm_info %>%
+  inner_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+  filter(rel == 1) %>%
+  select(-pid, -rel)
 
 ## ----tidy agricultural characteristics information---------------------------------------
 # spread livestock count and count livestock type
@@ -202,21 +176,22 @@ hh_agri_info <- hh_livestock_info %>%
 
 ## ----combine all information and fit model-----------------------------------------------
 hh_all_info <- hh_basic_info %>%
-  full_join(hh_member_info, by=c("clust", "nh")) %>%
-  full_join(hh_agri_info, by=c("clust", "nh")) %>%
-  replace(., is.na(.), 0)
+  inner_join(hh_head_info, by=c("clust", "nh")) %>%
+  inner_join(hh_agri_info, by=c("clust", "nh")) #%>%
+  #replace(., is.na(.), 0)
 
 hh_profit <- hh_profit_info %>%
-  left_join(hh_all_info, by=c("clust", "nh"))
+  inner_join(hh_all_info, by=c("clust", "nh")) %>%
+  select(-region, -district, -clust, -nh)
 
 # code below here is not finalized, it needs more test and tweak
-library(MASS)
+#library(MASS)
 
-hh_profit_model_full <- lm(profit ~ . - clust - nh - region - district,
+hh_profit_model_full <- lm(profit ~ .,
                            data = hh_profit)
 summary(hh_profit_model_full)
-hh_profit_model_full_step <- stepAIC(hh_profit_model_full, direction = "both", trace = FALSE)
-summary(hh_profit_model_full_step)
+#hh_profit_model_full_step <- stepAIC(hh_profit_model_full, direction = "both", trace = FALSE)
+#summary(hh_profit_model_full_step)
 
 hh_profit_model_sub1 <- lm(profit ~ reslan + ez + livstcd5 + livstcd11 + cropcd4 + cropcd10 + cropcd11 + cropcd25 + rootcd18,
                            data = hh_profit)
@@ -237,3 +212,60 @@ hh_profit_model_educ_score <- lm(profit ~ avgEdu, data = hh_profit_1)
 summary(hh_profit_model_educ_score)
 ggplot(hh_profit_1, mapping = aes(avgEdu, profit)) +
   geom_point()
+
+## ----back up code--------------------------------------------------------------------------
+# ## ----tidy household member information---------------------------------------------------
+# # household member information
+# hhm_info <- sec1 %>%
+#   select(clust, nh, pid, sex, agey) %>%
+#   filter(agey >= 15 & agey <= 60) %>%
+#   mutate(sex = factor(sex,
+#                       levels = as.character(c(1,2)),
+#                       labels = c("Male", "Female"))
+#   )
+# 
+# # household member education information
+# # map education qualification to education level
+# educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
+#                              "s2aq3l" = c(0, 1, rep(2, 4), rep(3, 8), 1.5))
+# 
+# hhm_educ <- sec2a %>%
+#   select(clust, nh, pid, s2aq3) %>%
+#   left_join(educ_level_map) %>%
+#   select(-s2aq3) %>%
+#   replace(., is.na(.), 0)
+# # mutate(s2aq3l = factor(s2aq3l,
+# #                        levels = as.character(c(1:5)),
+# #                        labels = c("None", "Basic Education", "Secondary Education",
+# #                                   "Tertiary Education", "Other")))
+# 
+# # hh_member_info <- hhm_info %>%
+# #   full_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+# #   group_by(clust, nh) %>%
+# #   summarise(malePercent = sum(sex == "Male")/n(),
+# #             femalePercent = sum(sex == "Female")/n(),
+# #             avgAge = mean(agey),
+# #             noneEducPercent = sum(s2aq3l == "None", na.rm = TRUE)/n(),
+# #             basicEducPercent = sum(s2aq3l == "Basic Education", na.rm = TRUE)/n(),
+# #             secEducPercent = sum(s2aq3l == "Secondary Education", na.rm = TRUE)/n(),
+# #             terEducPercent = sum(s2aq3l == "Tertiary Education", na.rm = TRUE)/n(),
+# #             otherEducPercent = sum(s2aq3l == "Other", na.rm = TRUE)/n())
+# # hh_member_info <- hhm_info %>%
+# #   left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+# #   group_by(clust, nh) %>%
+# #   summarise(maleCount = sum(sex == "Male"),
+# #             femaleCount = sum(sex == "Female"),
+# #             avgAge = mean(agey),
+# #             noneEducCount = sum(s2aq3l == "None", na.rm = TRUE),
+# #             basicEducCount = sum(s2aq3l == "Basic Education", na.rm = TRUE),
+# #             secEducCount = sum(s2aq3l == "Secondary Education", na.rm = TRUE),
+# #             terEducCount = sum(s2aq3l == "Tertiary Education", na.rm = TRUE),
+# #             otherEducCount = sum(s2aq3l == "Other", na.rm = TRUE))
+# hh_member_info <- hhm_info %>%
+#   left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+#   replace(., is.na(.), 0) %>%
+#   group_by(clust, nh) %>%
+#   summarise(maleCount = sum(sex == "Male"),
+#             femaleCount = sum(sex == "Female"),
+#             avgAge = mean(agey),
+#             avgEdu = mean(s2aq3l))
