@@ -49,38 +49,10 @@ ggplot(wage_fdexpense,
 
 ggsave(here("figures", "regression_wage_fdexpense.png"))
 
-#Household education:
-# household member education
-# map education qualification to education level
-sec2a_educ <- read_dta(here("raw_data","sec2a.dta"))
-educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
-                             "s2aq3l" = c(1, 2, rep(3, 4), rep(4, 8), 5))
-
-hhm_educ <- sec2a_educ %>%
-  select(nh, pid, clust, s2aq3) %>%
-  left_join(educ_level_map) %>%
-  select(-s2aq3) %>%
-  mutate(s2aq3l = factor(s2aq3l,
-                         levels = as.character(c(1:5)),
-                         labels = c("None", "Basic Education", "Secondary Education",
-                                    "Tertiary Education", "Other")))
-
-View(hhm_educ)
-
-#fdexpense_wage_educ <- wage_fdexpense %>%
-  #select("clust", "aveincome", "avefd")
- # full_join(hhm_educ, by=c("clust")) %>%
-  #group_by(clust) %>%
-  #summarise(
-           # noneEducPercent = sum(s2aq3l == "None", na.rm = TRUE)/n(),
-            #basicEducPercent = sum(s2aq3l == "Basic Education", na.rm = TRUE)/n(),
-            #secEducPercent = sum(s2aq3l == "Secondary Education", na.rm = TRUE)/n(),
-            #terEducPercent = sum(s2aq3l == "Tertiary Education", na.rm = TRUE)/n(),
-            #otherEducPercent = sum(s2aq3l == "Other", na.rm = TRUE)/n())
-#View(fdexpense_wage_educ)
 
 
-## ----import dataset------------------------------------------------------------------
+
+#### ----import dataset------------------------------------------------------------------
 agg1 <- read_dta(here("raw_data/aggregates","agg1.dta"))
 agg2 <- read_dta(here("raw_data/aggregates","agg2.dta"))
 sec8b <- read_dta(here("raw_data","sec8b.dta"))
@@ -337,7 +309,7 @@ hh_all_info_rural <- hh_basic_info_rural  %>%
 View(hh_all_info_rural)
 
 hh_profit_rural <- hh_basic_info_rural  %>%
-  left_join(hh_profit, by = c("clust", "nh")) %>%
+  left_join(hh_profit, by = c("clust", "nh", "region","district")) %>%
   group_by(clust, nh) 
 View(hh_profit_rural)
 
