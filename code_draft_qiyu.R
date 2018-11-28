@@ -174,6 +174,10 @@ hh_basic_info <- sec0a %>%
                        labels = c("Accra", "OtherUrban", "Rural"))
   )
 
+#### Household info of rural:
+hh_basic_info_rural <- hh_basic_info %>%
+  filter(loc2 == "Rural")
+
 ## ----tidy household member information---------------------------------------------------
 # household member information
 colSums(is.na(sec1))
@@ -240,6 +244,11 @@ hh_member_info <- hhm_info %>%
             femaleCount = sum(sex == "Female"),
             avgAge = mean(agey),
             avgEdu = mean(s2aq3l))
+
+hh_member_info_rural <- hh_basic_info_rural  %>%
+  left_join(hh_member_info, by = c("clust", "nh")) %>%
+  group_by(clust, nh) 
+View(hh_member_info_rural)
 
 ## ----tidy agricultural characteristics information---------------------------------------
 # spread livestock count and count livestock type
@@ -308,6 +317,11 @@ hh_agri_info <- hh_livestock_info %>%
   full_join(hh_root_info, by=c("clust", "nh")) %>%
   replace(., is.na(.), 0)
 
+hh_agri_info_rural <- hh_basic_info_rural  %>%
+  left_join(hh_agri_info, by = c("clust", "nh")) %>%
+  group_by(clust, nh) 
+View(hh_agri_info_rural)
+
 ## ----combine all information and fit model-----------------------------------------------
 hh_all_info <- hh_basic_info %>%
   full_join(hh_member_info, by=c("clust", "nh")) %>%
@@ -316,6 +330,16 @@ hh_all_info <- hh_basic_info %>%
 
 hh_profit <- hh_profit_info %>%
   left_join(hh_all_info, by=c("clust", "nh"))
+
+hh_all_info_rural <- hh_basic_info_rural  %>%
+  left_join(hh_all_info, by = c("clust", "nh")) %>%
+  group_by(clust, nh) 
+View(hh_all_info_rural)
+
+hh_profit_rural <- hh_basic_info_rural  %>%
+  left_join(hh_profit, by = c("clust", "nh")) %>%
+  group_by(clust, nh) 
+View(hh_profit_rural)
 
 # code below here is not finalized, it needs more test and tweak
 library(MASS)
@@ -347,5 +371,12 @@ summary(hh_profit_model_educ_score)
 ggplot(hh_profit_1, mapping = aes(avgEdu, profit)) +
   geom_point()
 
+
+###### rural model:
+library(MASS)
+
+hh_profit_model_rural <- lm(profit ~ . - clust - nh - region - district,
+                           data = hh_profit_rural)
+summary(hh_profit_model_rural)
 
 
