@@ -1,8 +1,9 @@
 library(tidyverse)
 library(haven)
+library(car)
 
 ## ----change this directory to your own folder containing glss4 folder---------------
-setwd("/Users/zhangsiqi/econ_5100/Assignment/Case_study")   #???? put under raw_data folder
+setwd("/Users/zhangsiqi/econ_5100/Assignment/Case_Study")   #???? put under raw_data folder
 
 ## ----read all data------------------------------------------------------------------
 # function to read all data
@@ -48,6 +49,10 @@ land_size_info <- sec8b %>%
   summarise(landSize = sum(s8bq4ac)) %>%
   filter(landSize >= 1)
 
+# resolve warnings
+attr(agg2$clust, "label") <- "Enumeration Area number"
+attr(agg2$nh, "label") <- "Household ID"
+
 # calculate household agri profit per acre
 # because the above correlations are both 1,
 # use only "agri1" and "agri2" to calculate agricultural profit
@@ -55,7 +60,7 @@ hh_profit_info <- agg2 %>%
   select(clust, nh, agri1, hhagdepn) %>%
   filter(agri1 != 0) %>%
   inner_join(land_size_info, by = c("clust", "nh")) %>%
-  mutate(profit = (agri1 - hhagdepn) / landSize) %>%
+  mutate(profit = agri1 / landSize) %>%
   select(-agri1, -hhagdepn, -landSize)
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit"
@@ -94,6 +99,7 @@ hh_basic_info <- sec0a %>%
 # household member information
 hhm_info <- sec1 %>%
   select(clust, nh, pid, sex, agey, rel) %>%
+  filter(agey >= 15 & agey <= 65) %>%
   mutate(female = sex == 2,
          age = agey) %>%
   select(-sex, -agey)
@@ -103,6 +109,13 @@ hhm_info <- sec1 %>%
 educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
                              "s2aq3l" = c(1, 2, rep(3, 4), rep(4, 8), 5))
 
+# resolve warnings
+attr(educ_level_map$s2aq3, "label") <- "Highest educ qualification"
+attr(educ_level_map$s2aq3, "format.stata") <- "%10.0g"
+attributes(sec2a$s2aq3)
+# Check NAs
+colSums(is.na(sec2a))
+
 hhm_educ <- sec2a %>%
   select(clust, nh, pid, s2aq1, s2aq3) %>%
   # if never attended school (s2aq1 == 2), set education to None (s2aq3 = 1)
@@ -110,8 +123,8 @@ hhm_educ <- sec2a %>%
   left_join(educ_level_map) %>%
   mutate(educ = factor(s2aq3l,
                          levels = as.character(c(1:5)),
-                         labels = c("None", "Basic Education", "Secondary Education",
-                                    "Tertiary Education", "Other"))) %>%
+                         labels = c("None", "BasicEducation", "SecondaryEducation",
+                                    "TertiaryEducation", "Other"))) %>%
   select(-s2aq1, -s2aq3, -s2aq3l)
 
 hh_head_info <- hhm_info %>%
@@ -176,42 +189,41 @@ hh_agri_info <- hh_livestock_info %>%
 
 ## ----combine all information and fit model-----------------------------------------------
 hh_all_info <- hh_basic_info %>%
-  inner_join(hh_head_info, by=c("clust", "nh")) %>%
-  inner_join(hh_agri_info, by=c("clust", "nh")) #%>%
+  inner_join(hh_head_info, by=c("clust", "nh")) #%>%
+  #inner_join(hh_agri_info, by=c("clust", "nh")) #%>%
   #replace(., is.na(.), 0)
 
 hh_profit <- hh_profit_info %>%
   inner_join(hh_all_info, by=c("clust", "nh")) %>%
   select(-region, -district, -clust, -nh)
 
-# code below here is not finalized, it needs more test and tweak
-#library(MASS)
+# function to check correlated variables and test null hypothesis
+aliasAndTestHnull <- function(model) {
+  model_summary <- summary(model)
+  print("===================== model summary =======================", quote = F)
+  print(model_summary)
+  model_alias <- alias(model)
+  print("===================== model alias =========================", quote = F)
+  print(model_alias)
+  # if there is no correlated variables, test hypothesis
+  if (is.null(model_alias$Complete)) {
+    model_coef <- rownames(model_summary$coefficients)[-1]
+    hnull <- paste0(model_coef, rep(" = 0", length(model_coef)))
+    print("===================== hypothesis test =====================", quote = F)
+    linearHypothesis(model, hnull)
+  } else {
+    warning("There are correlated variables. See above model alias")
+  }
+}
+# fit model and test hypothesis
+hh_profit_model_ur <- lm(profit ~ .,
+                         data = hh_profit)
+aliasAndTestHnull(hh_profit_model_ur)
 
-hh_profit_model_full <- lm(profit ~ .,
-                           data = hh_profit)
-summary(hh_profit_model_full)
-#hh_profit_model_full_step <- stepAIC(hh_profit_model_full, direction = "both", trace = FALSE)
-#summary(hh_profit_model_full_step)
-
-hh_profit_model_sub1 <- lm(profit ~ reslan + ez + livstcd5 + livstcd11 + cropcd4 + cropcd10 + cropcd11 + cropcd25 + rootcd18,
-                           data = hh_profit)
-
-hh_profit_model_basic <- lm(profit ~ ez + loc2 + loc5 + loc3,
-                            data = hh_profit)
-
-# hh_profit_model_educ_count <- lm(profit ~ noneEducCount + basicEducCount + secEducCount + terEducCount + otherEducCount,
-#                            data = hh_profit)
-
-# hh_profit_model_educ_percent <- lm(profit ~ noneEducPercent + basicEducPercent + secEducPercent + terEducPercent + otherEducPercent,
-#                                    data = hh_profit)
-
-hh_profit_1 <- hh_profit %>%
-  filter(profit <= 5e+08 & profit >= 0)
-  
-hh_profit_model_educ_score <- lm(profit ~ avgEdu, data = hh_profit_1)
-summary(hh_profit_model_educ_score)
-ggplot(hh_profit_1, mapping = aes(avgEdu, profit)) +
-  geom_point()
+# remove correlated variables
+hh_profit_model_r1 <- lm(profit ~ . - loc5 - loc3,
+                         data = hh_profit)
+aliasAndTestHnull(hh_profit_model_r1)
 
 ## ----back up code--------------------------------------------------------------------------
 # ## ----tidy household member information---------------------------------------------------
