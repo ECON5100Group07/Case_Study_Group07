@@ -146,18 +146,30 @@ hh_livestock_info <- sec8a2 %>%
          value = s8aq22a,
          fill = 0,
          sep = "") %>%
-  mutate(sqrLivstcd1 = livstcd1 * livstcd1,
-         sqrLivstcd2 = livstcd2 * livstcd2,
-         sqrLivstcd3 = livstcd3 * livstcd3,
-         sqrLivstcd4 = livstcd4 * livstcd4,
-         sqrLivstcd5 = livstcd5 * livstcd5,
-         sqrLivstcd6 = livstcd6 * livstcd6,
-         sqrLivstcd7 = livstcd7 * livstcd7,
-         sqrLivstcd8 = livstcd8 * livstcd8,
-         sqrLivstcd9 = livstcd9 * livstcd9,
-         sqrLivstcd10 = livstcd10 * livstcd10,
-         sqrLivstcd11 = livstcd11* livstcd11,
-         sqrLivstcd12 = livstcd12* livstcd12)
+  mutate(sqrtLivstcd1 = sqrt(livstcd1 + 1),
+         sqrtLivstcd2 = sqrt(livstcd2 + 1),
+         sqrtLivstcd3 = sqrt(livstcd3 + 1),
+         sqrtLivstcd4 = sqrt(livstcd4 + 1),
+         sqrtLivstcd5 = sqrt(livstcd5 + 1),
+         sqrtLivstcd6 = sqrt(livstcd6 + 1),
+         sqrtLivstcd7 = sqrt(livstcd7 + 1),
+         sqrtLivstcd8 = sqrt(livstcd8 + 1),
+         sqrtLivstcd9 = sqrt(livstcd9 + 1),
+         sqrtLivstcd10 = sqrt(livstcd10 + 1),
+         sqrtLivstcd11 = sqrt(livstcd11 + 1),
+         sqrtLivstcd12 = sqrt(livstcd12 + 1),
+         sqrLivstcd1 = (livstcd1)^2,
+         sqrLivstcd2 = (livstcd2)^2,
+         sqrLivstcd3 = (livstcd3)^2,
+         sqrLivstcd4 = (livstcd4)^2,
+         sqrLivstcd5 = (livstcd5)^2,
+         sqrLivstcd6 = (livstcd6)^2,
+         sqrLivstcd7 = (livstcd7)^2,
+         sqrLivstcd8 = (livstcd8)^2,
+         sqrLivstcd9 = (livstcd9)^2,
+         sqrLivstcd10 = (livstcd10)^2,
+         sqrLivstcd11 = (livstcd11)^2,
+         sqrLivstcd12 = (livstcd12)^2)
 summary(hh_livestock_info)
 
 
@@ -173,16 +185,25 @@ hh_equip_info <- sec8a3 %>%
          value = s8aq34,
          fill = 0,
          sep = "") %>%
-  mutate(sqreqcdown21 = eqcdown21 * eqcdown21,
-         sqreqcdown22 = eqcdown22 * eqcdown22,
-         sqreqcdown31 = eqcdown31 * eqcdown31,
-         sqreqcdown51 = eqcdown51 * eqcdown51,
-         sqreqcdown61 = eqcdown61 * eqcdown61,
-         sqreqcdown62 = eqcdown62 * eqcdown62,
-         sqreqcdown63 = eqcdown63 * eqcdown63,
-         sqreqcdown64 = eqcdown64 * eqcdown64,
-         sqreqcdown65 = eqcdown65 * eqcdown65)
-  
+  mutate(sqrteqcdown21 = sqrt(eqcdown21 + 1),
+         sqrteqcdown22 = sqrt(eqcdown22 + 1),
+         sqrteqcdown31 = sqrt(eqcdown31 + 1),
+         sqrteqcdown51 = sqrt(eqcdown51 + 1),
+         sqrteqcdown61 = sqrt(eqcdown61 + 1),
+         sqrteqcdown62 = sqrt(eqcdown62 + 1),
+         sqrteqcdown63 = sqrt(eqcdown63 + 1),
+         sqrteqcdown64 = sqrt(eqcdown64 + 1),
+         sqrteqcdown65 = sqrt(eqcdown65 + 1),
+         sqreqcdown21 = (eqcdown21)^2,
+         sqreqcdown22 = (eqcdown22)^2,
+         sqreqcdown31 = (eqcdown31)^2,
+         sqreqcdown51 = (eqcdown51)^2,
+         sqreqcdown61 = (eqcdown61)^2,
+         sqreqcdown62 = (eqcdown62)^2,
+         sqreqcdown63 = (eqcdown63)^2,
+         sqreqcdown64 = (eqcdown64)^2,
+         sqreqcdown65 = (eqcdown65)^2)
+summary(hh_equip_info) 
 # spread household havested crop count and count havested crop type
 hh_crop_info <- sec8c1 %>%
   select(clust, nh, cropcd, s8cq3a, s8cq17a, s8cq17b) %>%
@@ -195,7 +216,14 @@ hh_crop_info <- sec8c1 %>%
   spread(key = cropcd,
          value = s8cq3ac,
          fill = 0,
-         sep = "")
+         sep = "") %>%
+  mutate(sqrtcropcd8 = sqrt(cropcd8 + 1),
+        sqrtcropcd11 = sqrt(cropcd11 + 1),
+        sqrtcropcd25 = sqrt(cropcd25 + 1),
+        sqrcropcd8 = (cropcd8 )^2,
+        sqrcropcd11 = (cropcd11 )^2,
+        sqrcropcd25 = (cropcd25)^2)
+summary(hh_crop_info)
 
 # spread household havested root count and count havested root type
 hh_root_info <- sec8c2 %>%
