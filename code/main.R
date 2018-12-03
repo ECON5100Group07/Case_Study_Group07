@@ -292,6 +292,16 @@ hh_profit_model_ur <- lm(profit ~ .,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_ur)
 
+# fit rural model and test hypothesis
+hh_profit_model_rural <- lm(profit ~ .,
+                            data = hh_profit_rural)
+checkCorrVarAndTestHnull(hh_profit_model_rural)
+
+# fit urban model and test hypothesis
+hh_profit_model_urban <- lm(profit ~ .,
+                            data = hh_urban)
+checkCorrVarAndTestHnull(hh_profit_model_urban)
+
 # fit restricted model and test hypothesis
 hh_profit_model_r1 <- lm(profit ~ reslan + ez + educ + market + livstcd5 + livstcd6 +
                            equipTypeCount + cropTypeCount + cropcd8 + cropcd11 +
@@ -378,5 +388,4 @@ hh_profit$residuals <- hh_profit_model_r3$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
   geom_point() 
 ggsave(here("figures", "diag_r3_homoskedasticity.png"))
-
 
