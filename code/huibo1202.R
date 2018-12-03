@@ -172,7 +172,16 @@ hh_equip_info <- sec8a3 %>%
   spread(key = eqcdown,
          value = s8aq34,
          fill = 0,
-         sep = "") #%>%
+         sep = "") %>%
+  mutate(sqreqcdown21 = eqcdown21 * eqcdown21,
+         sqreqcdown22 = eqcdown22 * eqcdown22,
+         sqreqcdown31 = eqcdown31 * eqcdown31,
+         sqreqcdown51 = eqcdown51 * eqcdown51,
+         sqreqcdown61 = eqcdown61 * eqcdown61,
+         sqreqcdown62 = eqcdown62 * eqcdown62,
+         sqreqcdown63 = eqcdown63 * eqcdown63,
+         sqreqcdown64 = eqcdown64 * eqcdown64,
+         sqreqcdown65 = eqcdown65 * eqcdown65)
   
 
 # spread household havested crop count and count havested crop type
