@@ -183,7 +183,6 @@ hh_equip_info <- sec8a3 %>%
          sqreqcdown64 = eqcdown64 * eqcdown64,
          sqreqcdown65 = eqcdown65 * eqcdown65)
   
-
 # spread household havested crop count and count havested crop type
 hh_crop_info <- sec8c1 %>%
   select(clust, nh, cropcd, s8cq3a, s8cq17a, s8cq17b) %>%
