@@ -1,9 +1,8 @@
 library(tidyverse)
 library(here)
-library(GGally)
 library(ggplot2)
 library(haven)
-library(dplyr)
+library(car)
 
 
 #import useful dataset
@@ -77,10 +76,9 @@ colSums(is.na(agg2))
 #### huibo: A Poles is equivalent to 210 feet by 210 feet or 70 by 70 yards, which is equivalent to one Acre
 #### huibo: Nine (9) Ropes are equivalent to actual Acre, ie. a Rope is equivalent to one-ninth (1/9) of an Acre
 land_size_unit_map <- data.frame("s8bq4b" = as.double(c(1:4)),
-                                 "s8bq4bm" = c(1, 1, 0.1111, 0)) #### huibo
+                                 "s8bq4bm" = c(1, 1, 1/9, NA)) 
 
 
-#summary(sec8b)
 # convert all land size to acre
 land_size_info <- sec8b %>%
   select(clust, nh, s8bq4a, s8bq4b) %>%
@@ -99,20 +97,19 @@ land_size_info <- sec8b %>%
   #mutate(landSize = ifelse(landSize == 0, NA, landSize))
   filter(landSize!=0) 
 
-# calculate household agri profit per acre
-# because the above correlations are both 1,
-# use only "agri1" and "agri2" to calculate agricultural profit
-
 #### huibo resolve warnings
 attr(agg2$clust, "label") <- "Enumeration Area number"
 attr(agg2$nh, "label") <- "Household ID"
 
+# calculate household agri profit per acre
+# because the above correlations are both 1,
+# use only "agri1" and "agri2" to calculate agricultural profit
 hh_profit_info <- agg2 %>%
+  select(clust, nh, agri1, hhagdepn) %>%
+  filter(agri1 != 0) %>%
   inner_join(land_size_info, by = c("clust", "nh")) %>%
-  transmute(clust = clust, nh = nh,
-            profit = (agri1 - hhagdepn) / landSize) #%>% ##### huibo: only use agri1-hhagdepn
-#profit = (agri1 + argi2 - hhagdepn) / landSize) #%>%
-#filter(!is.na(profit)) #### huibo: can't be na here since landSize==0 is filtered above
+  mutate(profit = agri1 / landSize) %>%
+  select(-agri1, -hhagdepn, -landSize)
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit per acre"
 
@@ -146,30 +143,22 @@ hh_basic_info <- sec0a %>%
                        labels = c("Accra", "OtherUrban", "Rural"))
   )
 
-#### Household info of rural:
-hh_basic_info_rural <- hh_basic_info %>%
-  filter(loc2 == "Rural")
 
 ## ----tidy household member information---------------------------------------------------
 # household member information
-colSums(is.na(sec1))
-
-
 hhm_info <- sec1 %>%
-  select(clust, nh, pid, sex, agey) %>%
-  ##### huibo: refer to G4repot - P27
-  ##### huibo: why not factorize agey to <15, >=15 & <65, >=65
+  select(clust, nh, pid, sex, agey, rel) %>%
   filter(agey >= 15 & agey <= 65) %>%
-  mutate(sex = factor(sex,
-                      levels = as.character(c(1,2)),
-                      labels = c("Male", "Female"))
-  )
+  mutate(female = sex == 2,
+         age = agey) %>%
+  select(-sex, -agey)
+
 
 # household member education information
 # map education qualification to education level
 educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
-                             "s2aq3l" = c(0, 1, rep(2, 4), rep(3, 8), 1.5))
-### huibo resolve warnings
+                             "s2aq3l" = c(1, 2, rep(3, 4), rep(4, 8), 5))
+#resolve warnings
 attr(educ_level_map$s2aq3, "label") <- "Highest educ qualification"
 attr(educ_level_map$s2aq3, "format.stata") <- "%10.0g"
 attributes(sec2a$s2aq3)
@@ -177,59 +166,26 @@ attributes(sec2a$s2aq3)
 colSums(is.na(sec2a))
 
 hhm_educ <- sec2a %>%
-  select(clust, nh, pid, s2aq3) %>%
-  left_join(educ_level_map, by = "s2aq3") %>%
-  select(-s2aq3) #%>%
-##replace(., is.na(.), 0) #####HUIBO NO NA FOUND
-# mutate(s2aq3l = factor(s2aq3l,
-#                        levels = as.character(c(1:5)),
-#                        labels = c("None", "Basic Education", "Secondary Education",
-#                                   "Tertiary Education", "Other")))
+  select(clust, nh, pid, s2aq1, s2aq3) %>%
+  # if never attended school (s2aq1 == 2), set education to None (s2aq3 = 1)
+  mutate(s2aq3 = ifelse(s2aq1 == 2, 1, s2aq3)) %>%
+  left_join(educ_level_map) %>%
+  mutate(educ = factor(s2aq3l,
+                       levels = as.character(c(1:5)),
+                       labels = c("None", "BasicEducation", "SecondaryEducation",
+                                  "TertiaryEducation", "Other"))) %>%
+  select(-s2aq1, -s2aq3, -s2aq3l)
 
-# hh_member_info <- hhm_info %>%
-#   full_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-#   group_by(clust, nh) %>%
-#   summarise(malePercent = sum(sex == "Male")/n(),
-#             femalePercent = sum(sex == "Female")/n(),
-#             avgAge = mean(agey),
-#             noneEducPercent = sum(s2aq3l == "None", na.rm = TRUE)/n(),
-#             basicEducPercent = sum(s2aq3l == "Basic Education", na.rm = TRUE)/n(),
-#             secEducPercent = sum(s2aq3l == "Secondary Education", na.rm = TRUE)/n(),
-#             terEducPercent = sum(s2aq3l == "Tertiary Education", na.rm = TRUE)/n(),
-#             otherEducPercent = sum(s2aq3l == "Other", na.rm = TRUE)/n())
-# hh_member_info <- hhm_info %>%
-#   left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-#   group_by(clust, nh) %>%
-#   summarise(maleCount = sum(sex == "Male"),
-#             femaleCount = sum(sex == "Female"),
-#             avgAge = mean(agey),
-#             noneEducCount = sum(s2aq3l == "None", na.rm = TRUE),
-#             basicEducCount = sum(s2aq3l == "Basic Education", na.rm = TRUE),
-#             secEducCount = sum(s2aq3l == "Secondary Education", na.rm = TRUE),
-#             terEducCount = sum(s2aq3l == "Tertiary Education", na.rm = TRUE),
-#             otherEducCount = sum(s2aq3l == "Other", na.rm = TRUE))
-hh_member_info <- hhm_info %>%
-  left_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-  #replace(., is.na(.), 0) %>%
-  group_by(clust, nh) %>%
-  summarise(maleCount = sum(sex == "Male"),
-            femaleCount = sum(sex == "Female"),
-            avgAge = mean(agey),
-            avgEdu = mean(s2aq3l))
-
-hh_member_info_rural <- hh_basic_info_rural  %>%
-  left_join(hh_member_info, by = c("clust", "nh")) %>%
-  group_by(clust, nh) 
-View(hh_member_info_rural)
+hh_head_info <- hhm_info %>%
+  inner_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+  filter(rel == 1) %>%
+  select(-pid, -rel)
 
 ## ----tidy agricultural characteristics information---------------------------------------
 # spread livestock count and count livestock type
 # since there are too many missing value in livestock unit of messaure (s8aq22b),
 # we assume same livestock type has same unit,
 # and we only take livestock count (s8aq22a) into consideration
-
-colSums(is.na(sec8a2))
-
 hh_livestock_info <- sec8a2 %>%
   select(clust, nh, livstcd, s8aq22a) %>%
   group_by(clust, nh) %>%
@@ -238,6 +194,7 @@ hh_livestock_info <- sec8a2 %>%
          value = s8aq22a,
          fill = 0,
          sep = "")
+
 
 # count household agric equipment type
 # not including count of each equipment because of too many missing value (s8aq34)
@@ -266,6 +223,7 @@ hh_crop_info <- sec8c1 %>%
          fill = 0,
          sep = "")
 
+
 # spread household havested root count and count havested root type
 
 colSums(is.na(sec8c2))
@@ -289,66 +247,74 @@ hh_agri_info <- hh_livestock_info %>%
   full_join(hh_root_info, by=c("clust", "nh")) %>%
   replace(., is.na(.), 0)
 
-hh_agri_info_rural <- hh_basic_info_rural  %>%
-  left_join(hh_agri_info, by = c("clust", "nh")) %>%
-  group_by(clust, nh) 
-View(hh_agri_info_rural)
-
 ## ----combine all information and fit model-----------------------------------------------
 hh_all_info <- hh_basic_info %>%
-  full_join(hh_member_info, by=c("clust", "nh")) %>%
-  full_join(hh_agri_info, by=c("clust", "nh")) %>%
-  replace(., is.na(.), 0)
+  inner_join(hh_head_info, by=c("clust", "nh")) #%>%
+#inner_join(hh_agri_info, by=c("clust", "nh")) #%>%
+#replace(., is.na(.), 0)
 
 hh_profit <- hh_profit_info %>%
-  left_join(hh_all_info, by=c("clust", "nh"))
+  inner_join(hh_all_info, by=c("clust", "nh")) %>%
+  select(-region, -district, -clust, -nh)
+View(hh_profit)
 
-hh_all_info_rural <- hh_basic_info_rural  %>%
-  left_join(hh_all_info, by = c("clust", "nh")) %>%
-  group_by(clust, nh) 
-View(hh_all_info_rural)
-
-hh_profit_rural <- hh_basic_info_rural  %>%
-  left_join(hh_profit, by = c("clust", "nh", "region","district")) %>%
-  group_by(clust, nh) 
+hh_profit_rural <- hh_profit  %>%
+filter(loc2 == "Rural")
 View(hh_profit_rural)
 
-# code below here is not finalized, it needs more test and tweak
-library(MASS)
+hh_profit_urban <- hh_profit  %>%
+  filter(loc2 == "Urban")
+View(hh_profit_urban)
 
-hh_profit_model_full <- lm(profit ~ . - clust - nh - region - district,
-                           data = hh_profit)
-summary(hh_profit_model_full)
-hh_profit_model_full_step <- stepAIC(hh_profit_model_full, direction = "both", trace = FALSE)
-summary(hh_profit_model_full_step)
-
-hh_profit_model_sub1 <- lm(profit ~ reslan + ez + livstcd5 + livstcd11 + cropcd4 + cropcd10 + cropcd11 + cropcd25 + rootcd18,
-                           data = hh_profit)
-summary(hh_profit_model_sub1)
-hh_profit_model_basic <- lm(profit ~ ez + loc2 + loc5 + loc3,
-                            data = hh_profit)
-summary(hh_profit_model_basic)
-
-# hh_profit_model_educ_count <- lm(profit ~ noneEducCount + basicEducCount + secEducCount + terEducCount + otherEducCount,
-#                            data = hh_profit)
-
-# hh_profit_model_educ_percent <- lm(profit ~ noneEducPercent + basicEducPercent + secEducPercent + terEducPercent + otherEducPercent,
-#                                    data = hh_profit)
-
-hh_profit_1 <- hh_profit %>%
-  filter(profit <= 5e+08 & profit >= 0)
-
-hh_profit_model_educ_score <- lm(profit ~ avgEdu, data = hh_profit_1)
-summary(hh_profit_model_educ_score)
-ggplot(hh_profit_1, mapping = aes(avgEdu, profit)) +
-  geom_point()
+# function to check correlated variables and test null hypothesis
+aliasAndTestHnull <- function(model) {
+  model_summary <- summary(model)
+  print("===================== model summary =======================", quote = F)
+  print(model_summary)
+  model_alias <- alias(model)
+  print("===================== model alias =========================", quote = F)
+  print(model_alias)
+  # if there is no correlated variables, test hypothesis
+  if (is.null(model_alias$Complete)) {
+    model_coef <- rownames(model_summary$coefficients)[-1]
+    hnull <- paste0(model_coef, rep(" = 0", length(model_coef)))
+    print("===================== hypothesis test =====================", quote = F)
+    linearHypothesis(model, hnull)
+  } else {
+    warning("There are correlated variables. See above model alias")
+  }
+}
 
 
-###### rural model:
-library(MASS)
+# fit model and test hypothesis
+hh_profit_model_ur <- lm(profit ~ .,
+                         data = hh_profit)
+aliasAndTestHnull(hh_profit_model_ur)
 
-hh_profit_model_rural <- lm(profit ~ . - clust - nh - region - district,
-                           data = hh_profit_rural)
+# remove correlated variables
+hh_profit_model_r1 <- lm(profit ~ . - loc5 - loc3,
+                         data = hh_profit)
+aliasAndTestHnull(hh_profit_model_r1)
+
+###rural model and urban model:
+hh_profit_model_rural <- lm(profit ~ . ,
+                            data = hh_profit_rural)
+###https://stackoverflow.com/questions/18171246/error-in-contrasts-when-defining-a-linear-model-in-r
+(l <- sapply(hh_profit_rural, function(x) is.factor(x)))
+m <- hh_profit_rural[,1]
+ifelse(n <- sapply(m, function(x) length(levels(x))) == 1, "DROP", "NODROP")
+hh_profit_model_rural <- lm(profit ~ . ,
+                            data = m)
 summary(hh_profit_model_rural)
+
+hh_profit_model_urban <- lm(profit ~ . ,
+                            data = hh_profit_urban)
+(l <- sapply(hh_profit_urban, function(x) is.factor(x)))
+mm <- hh_profit_urban[,1]
+ifelse(n <- sapply(mm, function(x) length(levels(x))) == 1, "DROP", "NODROP")
+hh_profit_model_urban <- lm(profit ~ . ,
+                            data = mm)
+summary(hh_profit_model_urban)
+
 
 
