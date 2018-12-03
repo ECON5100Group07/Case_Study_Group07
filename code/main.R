@@ -16,7 +16,7 @@ sec8a2 <- read_dta(here("raw_data","sec8a2.dta"))
 sec8a3 <- read_dta(here("raw_data","sec8a3.dta"))
 sec8c1 <- read_dta(here("raw_data","sec8c1.dta"))
 sec8c2 <- read_dta(here("raw_data","sec8c2.dta"))
-cs2 <- read_dta(here("data/community","cs2.dta"))
+cs2 <- read_dta(here("raw_data/community","cs2.dta"))
 
 ## ----calculate agricultural profit per area unit (the y variable)-------------------
 # identify count of NAs in agg2
