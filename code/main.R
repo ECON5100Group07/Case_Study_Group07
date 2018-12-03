@@ -7,7 +7,7 @@ library(here)
 setwd(here())
 
 ## ----read all data------------------------------------------------------------------
-agg2 <- read_dta(here("data/aggregates","agg2.dta"))
+agg2 <- read_dta(here("raw_data/aggregates","agg2.dta"))
 sec8b <- read_dta(here("raw_data","sec8b.dta"))
 sec0a <- read_dta(here("raw_data","sec0a.dta"))
 sec1 <- read_dta(here("raw_data","sec1.dta"))
@@ -320,6 +320,7 @@ hh_profit %>% ggplot(aes(x = stand_res)) +
   geom_histogram() + xlab("Standardized residuals")
 ggsave(here("figures", "diag_ur_stand_res.png"))
 
+# Constant variance
 hh_profit$fitted <- hh_profit_model_ur$fitted.values
 hh_profit$residuals <- hh_profit_model_ur$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
