@@ -145,7 +145,21 @@ hh_livestock_info <- sec8a2 %>%
   spread(key = livstcd,
          value = s8aq22a,
          fill = 0,
-         sep = "")
+         sep = "") %>%
+  mutate(sqrLivstcd1 = livstcd1 * livstcd1,
+         sqrLivstcd2 = livstcd2 * livstcd2,
+         sqrLivstcd3 = livstcd3 * livstcd3,
+         sqrLivstcd4 = livstcd4 * livstcd4,
+         sqrLivstcd5 = livstcd5 * livstcd5,
+         sqrLivstcd6 = livstcd6 * livstcd6,
+         sqrLivstcd7 = livstcd7 * livstcd7,
+         sqrLivstcd8 = livstcd8 * livstcd8,
+         sqrLivstcd9 = livstcd9 * livstcd9,
+         sqrLivstcd10 = livstcd10 * livstcd10,
+         sqrLivstcd11 = livstcd11* livstcd11,
+         sqrLivstcd12 = livstcd12* livstcd12)
+summary(hh_livestock_info)
+
 
 # count household agric equipment type
 # not including count of each equipment because of too many missing value (s8aq34)
