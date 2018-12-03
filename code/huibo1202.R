@@ -164,9 +164,16 @@ summary(hh_livestock_info)
 # count household agric equipment type
 # not including count of each equipment because of too many missing value (s8aq34)
 hh_equip_info <- sec8a3 %>%
-  select(clust, nh, eqcdown) %>%
+  select(clust, nh, eqcdown, s8aq34) %>%
+  replace(., . > 1e+100, 0)%>%
+  filter(s8aq34 != 0) %>%
   group_by(clust, nh) %>%
-  summarise(equipTypeCount = n())
+  mutate(equipTypeCount = n()) %>%
+  spread(key = eqcdown,
+         value = s8aq34,
+         fill = 0,
+         sep = "") #%>%
+  
 
 # spread household havested crop count and count havested crop type
 hh_crop_info <- sec8c1 %>%
