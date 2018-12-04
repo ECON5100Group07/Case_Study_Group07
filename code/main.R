@@ -323,12 +323,13 @@ checkCorrVarAndTestHnull(hh_profit_model_r3)
 ## ----regression diagnostics-----------------------------------------------
 #01.unrestricted model:
 # Standardised residuals
+set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_ur)
   )
 hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram() + xlab("Standardized residuals")
+  geom_histogram(colour = "black", fill = "lightblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of UR model")
 ggsave(here("figures", "diag_ur_stand_res.png"))
 
 # Constant variance
@@ -340,12 +341,13 @@ ggsave(here("figures", "diag_ur_homoskedasticity.png"))
 
 #02restricted model:
 # Standardised residuals
+set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r1)
   )
 hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram() + xlab("Standardized residuals")
+  geom_histogram(colour = "black", fill = "darkblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R1 model")
 ggsave(here("figures", "diag_r1_stand_res.png"))
 
 # Constant variance
@@ -357,12 +359,13 @@ ggsave(here("figures", "diag_r1_homoskedasticity.png"))
 
 #03restricted model with only education and local characteristic information :
 # Standardised residuals
+set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r2)
   )
 hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram() + xlab("Standardized residuals")
+  geom_histogram(colour = "black", fill = "yellow") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R2 model")
 ggsave(here("figures", "diag_r2_stand_res.png"))
 
 # Constant variance
@@ -374,12 +377,13 @@ ggsave(here("figures", "diag_r2_homoskedasticity.png"))
 
 #04 restricted model after removing loc5 and loc3  :
 # Standardised residuals
+set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r3)
   )
 hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram() + xlab("Standardized residuals")
+  geom_histogram(colour = "black", fill = "orange") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R3 model")
 ggsave(here("figures", "diag_r3_stand_res.png"))
 
 # Constant variance
