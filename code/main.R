@@ -336,7 +336,7 @@ ggsave(here("figures", "diag_ur_stand_res.png"))
 hh_profit$fitted <- hh_profit_model_ur$fitted.values
 hh_profit$residuals <- hh_profit_model_ur$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point() 
+  geom_point(colour = "lightblue") + ggtitle("Homoskedasticity of UR model")
 ggsave(here("figures", "diag_ur_homoskedasticity.png"))
 
 #02restricted model:
@@ -354,7 +354,7 @@ ggsave(here("figures", "diag_r1_stand_res.png"))
 hh_profit$fitted <- hh_profit_model_r1$fitted.values
 hh_profit$residuals <- hh_profit_model_r1$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point() 
+  geom_point(colour = "darkblue") + ggtitle("Homoskedasticity of R1 model")
 ggsave(here("figures", "diag_r1_homoskedasticity.png"))
 
 #03restricted model with only education and local characteristic information :
@@ -372,7 +372,7 @@ ggsave(here("figures", "diag_r2_stand_res.png"))
 hh_profit$fitted <- hh_profit_model_r2$fitted.values
 hh_profit$residuals <- hh_profit_model_r2$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point() 
+  geom_point(colour = "yellow") + ggtitle("Homoskedasticity of R2 model")
 ggsave(here("figures", "diag_r2_homoskedasticity.png"))
 
 #04 restricted model after removing loc5 and loc3  :
@@ -390,6 +390,6 @@ ggsave(here("figures", "diag_r3_stand_res.png"))
 hh_profit$fitted <- hh_profit_model_r3$fitted.values
 hh_profit$residuals <- hh_profit_model_r3$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point() 
+  geom_point(colour = "orange") + ggtitle("Homoskedasticity of R3 model")
 ggsave(here("figures", "diag_r3_homoskedasticity.png"))
 
