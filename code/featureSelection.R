@@ -174,12 +174,65 @@ all_features <- hh_basic_info %>%
   AddAggFeaturesFromFiles("./glss4/raw_data/aggregates/", "^agg[0-9]*.dta")
 
 
+
 # household basic information
 # ## ----tidy community information----------------------------------------------------------
 
-# hh_profit <- hh_profit_info %>%
-#   inner_join(all_features, by=c("clust", "nh")) %>%
-#   select(-region, -district, -eanum, -clust, -nh)
+hh_profit <- hh_profit_info %>%
+ inner_join(all_features, by=c("clust", "nh")) %>%
+ select(-region, -district, -eanum, -clust, -nh, -reslan, -ez, -loc2, -loc3, -loc5) 
+ 
+
+
+## correlation ###
+findCorrelation <- function(a) {
+  df <- data.frame(index = (NA), colName=(NA), correlation = (NA))
+  for (i in 1:ncol(a)) {
+    correlationP <- cor(a[i], a[1])
+    row <- c(i, colnames(a[i]),correlationP)
+    df<- rbind(df, row) 
+  }
+  df <- df %>%
+    filter(!is.na(colName))
+  df <- df[order(df$correlation, decreasing = T),]
+  return (df)
+}
+
+all_correlations <- findCorrelation(hh_profit)
+
+topFeatures <- hh_profit[c(all_correlations$colName[1:15])]
+hh_model_topfeatures <- lm(profit ~ ., data = topFeatures)
+summary(hh_model_topfeatures)
+
+allCorrelationsFiltered <- all_correlations %>%
+  filter(colName !="agri1" 
+         &colName !="agri1c"
+         &colName !="agri2"
+         &colName !="agri2c"
+         &colName !="inctrcrp_sum"
+         &colName !="inctrcrp_mean"
+         &colName !="crpinc1"
+         &colName !="crpinc2" 
+         &colName !="rootinc"
+         &colName !="incothag" 
+         &colName !="trcrpinc"
+         &colName !="homepro" 
+         &colName !="expland" 
+         &colName !="excrop" 
+         &colName !="exliv" 
+         &colName !="fdprexp1_mean" 
+         &colName !="fdprexp1_sum" 
+         &colName !="expfdpr1" 
+         &colName !="expfdpr2" 
+         &colName !="depneq")
+
+topFeaturesFiltered <- hh_profit[c(allCorrelationsFiltered$colName[1:15])]
+hh_model_topfeatures_filtered <- lm(profit ~ ., data = topFeaturesFiltered)
+summary(hh_model_topfeatures_filtered)
+#AGRI1 = CRPINC1 + CRPINC2 + ROOTINC + INCOTHAG 
+# + TRCRPINC +HOMEPRO - EXPLAND - EXCROP - EXLIV 
+# - EXPFDPR1 - EXPFDPR2 
+# HHAGDEPN = DEPNEQ
 # 
 # # function to check correlated variables and test null hypothesis
 # 
