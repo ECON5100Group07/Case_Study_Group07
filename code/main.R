@@ -266,10 +266,10 @@ hh_profit <- hh_profit_info %>%
 ## correlation ###
 findCorrelation <- function(inputFeatures) {
   df <- data.frame(index = (NA), colName=(NA), correlation = (NA))
-  for (i in 1:ncol()) {
+  for (i in 1:ncol(inputFeatures)) {
     if (i == 1 | i >= 16) {
-      correlationP <- cor(a[i], a[1])
-      row <- c(i, colnames(a[i]),correlationP)
+      correlationP <- cor(inputFeatures[i], inputFeatures[1])
+      row <- c(i, colnames(inputFeatures[i]),correlationP)
       df<- rbind(df, row) 
    }
   }
@@ -343,75 +343,75 @@ hh_profit_model_r3 <- lm(profit ~ educ + ez + loc2 + market + transport,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r3)
 
-## ----regression diagnostics-----------------------------------------------
-#01.unrestricted model:
-# Standardised residuals
-#set.seed(1234)
-hh_profit <- hh_profit %>%
-  mutate(
-    stand_res = rstandard(hh_profit_model_ur)
-  )
-hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram(colour = "black", fill = "lightblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of UR model")
-ggsave(here("figures", "diag_ur_stand_res.png"))
-
-# Constant variance
-hh_profit$fitted <- hh_profit_model_ur$fitted.values
-hh_profit$residuals <- hh_profit_model_ur$residuals
-hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(colour = "lightblue") + ggtitle("Homoskedasticity of UR model")
-ggsave(here("figures", "diag_ur_homoskedasticity.png"))
-
-#02restricted model:
-# Standardised residuals
-#set.seed(1234)
-hh_profit <- hh_profit %>%
-  mutate(
-    stand_res = rstandard(hh_profit_model_r1)
-  )
-hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram(colour = "black", fill = "darkblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R1 model")
-ggsave(here("figures", "diag_r1_stand_res.png"))
-
-# Constant variance
-hh_profit$fitted <- hh_profit_model_r1$fitted.values
-hh_profit$residuals <- hh_profit_model_r1$residuals
-hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(colour = "darkblue") + ggtitle("Homoskedasticity of R1 model")
-ggsave(here("figures", "diag_r1_homoskedasticity.png"))
-
-#03restricted model with only education and local characteristic information :
-# Standardised residuals
-#set.seed(1234)
-hh_profit <- hh_profit %>%
-  mutate(
-    stand_res = rstandard(hh_profit_model_r2)
-  )
-hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram(colour = "black", fill = "yellow") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R2 model")
-ggsave(here("figures", "diag_r2_stand_res.png"))
-
-# Constant variance
-hh_profit$fitted <- hh_profit_model_r2$fitted.values
-hh_profit$residuals <- hh_profit_model_r2$residuals
-hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(colour = "yellow") + ggtitle("Homoskedasticity of R2 model")
-ggsave(here("figures", "diag_r2_homoskedasticity.png"))
-
-#04 restricted model after removing loc5 and loc3  :
-# Standardised residuals
-#set.seed(1234)
-hh_profit <- hh_profit %>%
-  mutate(
-    stand_res = rstandard(hh_profit_model_r3)
-  )
-hh_profit %>% ggplot(aes(x = stand_res)) +
-  geom_histogram(colour = "black", fill = "orange") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R3 model")
-ggsave(here("figures", "diag_r3_stand_res.png"))
-
-# Constant variance
-hh_profit$fitted <- hh_profit_model_r3$fitted.values
-hh_profit$residuals <- hh_profit_model_r3$residuals
-hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(colour = "orange") + ggtitle("Homoskedasticity of R3 model")
-ggsave(here("figures", "diag_r3_homoskedasticity.png"))
+# ## ----regression diagnostics-----------------------------------------------
+# #01.unrestricted model:
+# # Standardised residuals
+# #set.seed(1234)
+# hh_profit <- hh_profit %>%
+#   mutate(
+#     stand_res = rstandard(hh_profit_model_ur)
+#   )
+# hh_profit %>% ggplot(aes(x = stand_res)) +
+#   geom_histogram(colour = "black", fill = "lightblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of UR model")
+# ggsave(here("figures", "diag_ur_stand_res.png"))
+# 
+# # Constant variance
+# hh_profit$fitted <- hh_profit_model_ur$fitted.values
+# hh_profit$residuals <- hh_profit_model_ur$residuals
+# hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
+#   geom_point(colour = "lightblue") + ggtitle("Homoskedasticity of UR model")
+# ggsave(here("figures", "diag_ur_homoskedasticity.png"))
+# 
+# #02restricted model:
+# # Standardised residuals
+# #set.seed(1234)
+# hh_profit <- hh_profit %>%
+#   mutate(
+#     stand_res = rstandard(hh_profit_model_r1)
+#   )
+# hh_profit %>% ggplot(aes(x = stand_res)) +
+#   geom_histogram(colour = "black", fill = "darkblue") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R1 model")
+# ggsave(here("figures", "diag_r1_stand_res.png"))
+# 
+# # Constant variance
+# hh_profit$fitted <- hh_profit_model_r1$fitted.values
+# hh_profit$residuals <- hh_profit_model_r1$residuals
+# hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
+#   geom_point(colour = "darkblue") + ggtitle("Homoskedasticity of R1 model")
+# ggsave(here("figures", "diag_r1_homoskedasticity.png"))
+# 
+# #03restricted model with only education and local characteristic information :
+# # Standardised residuals
+# #set.seed(1234)
+# hh_profit <- hh_profit %>%
+#   mutate(
+#     stand_res = rstandard(hh_profit_model_r2)
+#   )
+# hh_profit %>% ggplot(aes(x = stand_res)) +
+#   geom_histogram(colour = "black", fill = "yellow") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R2 model")
+# ggsave(here("figures", "diag_r2_stand_res.png"))
+# 
+# # Constant variance
+# hh_profit$fitted <- hh_profit_model_r2$fitted.values
+# hh_profit$residuals <- hh_profit_model_r2$residuals
+# hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
+#   geom_point(colour = "yellow") + ggtitle("Homoskedasticity of R2 model")
+# ggsave(here("figures", "diag_r2_homoskedasticity.png"))
+# 
+# #04 restricted model after removing loc5 and loc3  :
+# # Standardised residuals
+# #set.seed(1234)
+# hh_profit <- hh_profit %>%
+#   mutate(
+#     stand_res = rstandard(hh_profit_model_r3)
+#   )
+# hh_profit %>% ggplot(aes(x = stand_res)) +
+#   geom_histogram(colour = "black", fill = "orange") + xlab("Standardized residuals") + ggtitle("Standardized residuals of R3 model")
+# ggsave(here("figures", "diag_r3_stand_res.png"))
+# 
+# # Constant variance
+# hh_profit$fitted <- hh_profit_model_r3$fitted.values
+# hh_profit$residuals <- hh_profit_model_r3$residuals
+# hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
+#   geom_point(colour = "orange") + ggtitle("Homoskedasticity of R3 model")
+# ggsave(here("figures", "diag_r3_homoskedasticity.png"))
