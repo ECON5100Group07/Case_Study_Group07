@@ -258,9 +258,32 @@ hh_all_info <- hh_basic_info %>%
   inner_join(hh_comm_info, by=c("region", "district", "eanum")) %>%
   inner_join(hh_agri_info, by=c("clust", "nh"))
 
+
 hh_profit <- hh_profit_info %>%
   inner_join(hh_all_info, by=c("clust", "nh")) %>%
   select(-region, -district, -eanum, -clust, -nh)
+
+## correlation ###
+findCorrelation <- function(inputFeatures) {
+  df <- data.frame(index = (NA), colName=(NA), correlation = (NA))
+  for (i in 1:ncol()) {
+    if (i == 1 | i >= 16) {
+      correlationP <- cor(a[i], a[1])
+      row <- c(i, colnames(a[i]),correlationP)
+      df<- rbind(df, row) 
+   }
+  }
+  df <- df %>%
+    filter(!is.na(colName))
+  df <- df[order(df$correlation, decreasing = T),]
+  return (df)
+}
+
+all_correlations <- findCorrelation(hh_profit)
+topFeatures <- hh_profit[c(all_correlations$colName[1:15])]
+hh_model_topfeatures <- lm(profit ~ ., data = topFeatures)
+summary(hh_model_topfeatures)
+
 
 ####filter out rural and urban data from hh_profit
 hh_profit_rural <- hh_profit %>%
@@ -323,7 +346,7 @@ checkCorrVarAndTestHnull(hh_profit_model_r3)
 ## ----regression diagnostics-----------------------------------------------
 #01.unrestricted model:
 # Standardised residuals
-set.seed(1234)
+#set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_ur)
@@ -341,7 +364,7 @@ ggsave(here("figures", "diag_ur_homoskedasticity.png"))
 
 #02restricted model:
 # Standardised residuals
-set.seed(1234)
+#set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r1)
@@ -359,7 +382,7 @@ ggsave(here("figures", "diag_r1_homoskedasticity.png"))
 
 #03restricted model with only education and local characteristic information :
 # Standardised residuals
-set.seed(1234)
+#set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r2)
@@ -377,7 +400,7 @@ ggsave(here("figures", "diag_r2_homoskedasticity.png"))
 
 #04 restricted model after removing loc5 and loc3  :
 # Standardised residuals
-set.seed(1234)
+#set.seed(1234)
 hh_profit <- hh_profit %>%
   mutate(
     stand_res = rstandard(hh_profit_model_r3)
@@ -392,4 +415,3 @@ hh_profit$residuals <- hh_profit_model_r3$residuals
 hh_profit  %>% ggplot(aes(x = fitted, y = residuals)) +
   geom_point(colour = "orange") + ggtitle("Homoskedasticity of R3 model")
 ggsave(here("figures", "diag_r3_homoskedasticity.png"))
-
