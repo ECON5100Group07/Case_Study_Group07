@@ -356,6 +356,11 @@ hh_profit_model_r3 <- lm(profit ~ educ + ez + loc2 + market + transport,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r3)
 
+# fit a model with educ * age
+hh_profit_model_r4 <- lm(profit ~ educ * age + female + ez + loc2 + market + transport, 
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_r4)
+
 # ## ----regression diagnostics-----------------------------------------------
 # #01.unrestricted model:
 # # Standardised residuals
