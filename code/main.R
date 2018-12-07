@@ -65,11 +65,11 @@ cor(agg2$agri1, agg2$agri1c)
 # because the above correlations are both 1,
 # use only "agri1" to calculate agricultural profit
 hh_profit_info <- agg2 %>%
-  select(clust, nh, agri1) %>%
+  select(clust, nh, agri1, hhagdepn) %>%
   filter(agri1 != 0) %>%
   inner_join(land_size_info, by = c("clust", "nh")) %>%
-  mutate(profit = agri1 / landSize) %>%
-  select(-agri1, -landSize)
+  mutate(profit = agri1 - hhagdepn / landSize) %>%
+  select(-agri1, -hhagdepn, -landSize)
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit"
 
@@ -270,7 +270,6 @@ hh_all_info <- hh_basic_info %>%
   inner_join(hh_comm_info, by=c("region", "district", "eanum")) %>%
   inner_join(hh_agri_info, by=c("clust", "nh"))
 
-
 hh_profit <- hh_profit_info %>%
   inner_join(hh_all_info, by=c("clust", "nh")) %>%
   select(-region, -district, -eanum, -clust, -nh)
@@ -295,7 +294,6 @@ all_correlations <- findCorrelation(hh_profit)
 topFeatures <- hh_profit[c(all_correlations$colName[1:15])]
 hh_model_topfeatures <- lm(profit ~ ., data = topFeatures)
 summary(hh_model_topfeatures)
-
 
 ####filter out rural and urban data from hh_profit
 hh_profit_rural <- hh_profit %>%
@@ -343,10 +341,8 @@ hh_profit_model_urban <- lm(profit ~ .,
 checkCorrVarAndTestHnull(hh_profit_model_urban)
 
 # fit restricted model and test hypothesis
-hh_profit_model_r1 <- lm(profit ~ reslan + ez + educ + market + livstcd5 + livstcd6 +
-                           equipTypeCount + cropTypeCount + cropcd8 + cropcd11 +
-                           cropcd25 + rootcd8 + rootcd18 + rootcd20 + rootcd27 +
-                           + rootcd33,
+hh_profit_model_r1 <- lm(profit ~ ez + age + sqrtLivstcd5 + sqrLivstcd7 + eqcdown61 + cropcd20 +
+                           cropcd23 + rootcd6 + rootcd18 + rootcd20 + rootcd27 + rootcd30 + rootcd33,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r1)
 
