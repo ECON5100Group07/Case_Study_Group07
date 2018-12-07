@@ -7,16 +7,28 @@ library(here)
 setwd(here())
 
 ## ----read all data------------------------------------------------------------------
-agg2 <- read_dta(here("raw_data/aggregates","agg2.dta"))
-sec8b <- read_dta(here("raw_data","sec8b.dta"))
-sec0a <- read_dta(here("raw_data","sec0a.dta"))
-sec1 <- read_dta(here("raw_data","sec1.dta"))
-sec2a <- read_dta(here("raw_data","sec2a.dta"))
-sec8a2 <- read_dta(here("raw_data","sec8a2.dta"))
-sec8a3 <- read_dta(here("raw_data","sec8a3.dta"))
-sec8c1 <- read_dta(here("raw_data","sec8c1.dta"))
-sec8c2 <- read_dta(here("raw_data","sec8c2.dta"))
-cs2 <- read_dta(here("raw_data/community","cs2.dta"))
+# function to read raw data
+readRawData <- function(datafile) {
+  subfolder <- datafile[1]
+  filename <- datafile[2]
+  path <- paste0(subfolder, filename, ".dta")
+  data <- read_dta(here("raw_data", path))
+  assign(filename, data, envir = .GlobalEnv)
+}
+
+# list of data file pairs to read, first is subfolder, second is file name
+datafiles <- list(c("aggregates/", "agg2"),
+                  c("", "sec8b"),
+                  c("", "sec0a"),
+                  c("", "sec1"),
+                  c("", "sec2a"),
+                  c("", "sec8a2"),
+                  c("", "sec8a3"),
+                  c("", "sec8c1"),
+                  c("", "sec8c2"),
+                  c("community/", "cs2"))
+
+sapply(datafiles, readRawData)
 
 ## ----calculate agricultural profit per area unit (the y variable)-------------------
 # identify count of NAs in agg2
@@ -288,9 +300,13 @@ summary(hh_model_topfeatures)
 ####filter out rural and urban data from hh_profit
 hh_profit_rural <- hh_profit %>%
   filter(loc2 == "Rural")
+# remove factor column with only one value
+hh_profit_rural <- Filter(function(x)(!is.factor(x) || length(unique(x))>1), hh_profit_rural)
 
 hh_profit_urban <- hh_profit %>%
   filter(loc2 == "Urban")
+# remove factor column with only one value
+hh_profit_urban <- Filter(function(x)(!is.factor(x) || length(unique(x))>1), hh_profit_urban)
 
 # function to check correlated variables and test null hypothesis
 checkCorrVarAndTestHnull <- function(model) {
@@ -310,6 +326,7 @@ checkCorrVarAndTestHnull <- function(model) {
     warning("There are correlated variables. See above model alias")
   }
 }
+
 # fit unrestricted model and test hypothesis
 hh_profit_model_ur <- lm(profit ~ .,
                          data = hh_profit)
@@ -322,7 +339,7 @@ checkCorrVarAndTestHnull(hh_profit_model_rural)
 
 # fit urban model and test hypothesis
 hh_profit_model_urban <- lm(profit ~ .,
-                            data = hh_urban)
+                            data = hh_profit_urban)
 checkCorrVarAndTestHnull(hh_profit_model_urban)
 
 # fit restricted model and test hypothesis
