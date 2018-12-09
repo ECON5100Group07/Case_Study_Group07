@@ -110,7 +110,7 @@ educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
 # resolve warnings
 attr(educ_level_map$s2aq3, "label") <- "Highest educ qualification"
 attr(educ_level_map$s2aq3, "format.stata") <- "%10.0g"
-attributes(sec2a$s2aq3)
+
 # Check NAs
 colSums(is.na(sec2a))
 
@@ -127,7 +127,7 @@ hhm_educ <- sec2a %>%
 
 hh_head_info <- hhm_info %>%
   inner_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
-  filter(rel == 1) %>%
+  filter(rel == 1) %>% # head of household
   select(-pid, -rel)
 
 ## ----tidy agricultural characteristics information---------------------------------------

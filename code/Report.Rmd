@@ -19,7 +19,7 @@ source(here("code","helperFunc.R"))
 
 After reading through the documentation, we determined these data files contain the data we want to use to analyze the influencing factors of Ghana agricultural profits
 
-```{r echo = FALSE}
+```{r}
 # list of data file pairs to read, first is subfolder, second is file name
 datafiles <- list(c("aggregates/", "agg2"),
                   c("", "sec8b"),
@@ -45,8 +45,7 @@ First we need to convert different area unit into a same one. Looking at count o
 table(sec8b$s8bq4b)
 land_size_unit_map <- data.frame("s8bq4b" = as.double(c(1:4)),
                                  "s8bq4bm" = c(1, 1, 1/9, NA))
-```
-```{r}
+
 # convert all land size to acre
 land_size_info <- sec8b %>%
   select(clust, nh, s8bq4a, s8bq4b) %>%
@@ -71,8 +70,7 @@ colSums(is.na(agg2))
 
 # check correlation between agricultural income and corrected agricultural income
 cor(agg2$agri1, agg2$agri1c)
-```
-```{r}
+
 # resolve warnings during join
 attr(agg2$clust, "label") <- "Enumeration Area number"
 attr(agg2$nh, "label") <- "Household ID"
@@ -95,6 +93,7 @@ attr(hh_profit_info$profit, "label") <- "HH agri profit"
 For basic household information, we are interested in language of respondent (values greater than 1e+100 are treated as "Unknown" language), ecological zone number and 3 different locality classifications. All variables are converted to factor type so they could be used as dummy variables in linear model.
 
 ```{r}
+# household basic information
 hh_basic_info <- sec0a %>%
   select(region, district, eanum, clust, nh, reslan, ez:loc3) %>%
   mutate(reslan = cleanAndFactorize(reslan, 1e+100, 99,
@@ -119,8 +118,79 @@ hh_basic_info <- sec0a %>%
 
 ## Tidy household member information
 
+Select information for household members and calculate mean, max and min age of household.
 
+```{r}
+# household member information
+hhm_info <- sec1 %>%
+  select(clust, nh, pid, sex, agey, rel) %>%
+  group_by(clust, nh) %>%
+  mutate(female = sex == 2,
+         age = agey,
+         avgAge = mean(agey),
+         maxAge = max(agey),
+         minAge = min(agey)
+  ) %>%
+  select(-sex, -agey)
+```
 
+Based on information from these two below sources, we categorize educational qualification (`s2aq3`) into 5 levels: "None", "BasicEducation", "SecondaryEducation", "TertiaryEducation" and "Other". For missing value in `s2aq3`, it's because these people never attended school (`s2aq1 == 2`). In this case we set education to None.
+
+[Education System in Ghana](https://www.scholaro.com/pro/Countries/Ghana/Education-System)
+
+[Education in Ghana Wikipedia](https://en.wikipedia.org/wiki/Education_in_Ghana)
+
+Educational Qualification | Education Level
+--------------------------|--------------------
+01 None                   | None
+02 MSLC?BECE              | BasicEducation
+03 Voc/Comm               | SecondaryEducation
+04 ‘O’ Level              | SecondaryEducation
+05 SSS                    | SecondaryEducation
+06 ‘A’ Level              | SecondaryEducation
+07 T/T Cert. B            | TertiaryEducation
+08 T /T Cert. A           | TertiaryEducation
+09 Nursing                | TertiaryEducation
+10 Tech/Prof Cert.        | TertiaryEducation
+11 Tech/Prof Dip          | TertiaryEducation
+12 Bachelor               | TertiaryEducation
+13 Masters                | TertiaryEducation
+14 Doctorate              | TertiaryEducation
+96 Other                  | Other
+
+```{r warning = FALSE}
+# household member education information
+# map education qualification to education level
+educ_level_map <- data.frame("s2aq3" = c(1:14, 96),
+                             "s2aq3l" = c(1, 2, rep(3, 4), rep(4, 8), 5))
+
+# resolve warnings
+attr(educ_level_map$s2aq3, "label") <- "Highest educ qualification"
+attr(educ_level_map$s2aq3, "format.stata") <- "%10.0g"
+
+# Check NAs
+colSums(is.na(sec2a))
+
+hhm_educ <- sec2a %>%
+  select(clust, nh, pid, s2aq1, s2aq3) %>%
+  # if never attended school (s2aq1 == 2), set education to None (s2aq3 = 1)
+  mutate(s2aq3 = ifelse(s2aq1 == 2, 1, s2aq3)) %>%
+  left_join(educ_level_map) %>%
+  mutate(educ = factor(s2aq3l,
+                       levels = as.character(c(1:5)),
+                       labels = c("None", "BasicEducation", "SecondaryEducation",
+                                  "TertiaryEducation", "Other"))) %>%
+  select(-s2aq1, -s2aq3, -s2aq3l)
+```
+
+Then we join household member info and education info, and use info of household head as a representative of the household.
+
+```{r}
+hh_head_info <- hhm_info %>%
+  inner_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
+  filter(rel == 1) %>% # head of household
+  select(-pid, -rel)
+```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
