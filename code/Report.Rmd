@@ -39,6 +39,13 @@ invisible(sapply(datafiles, readRawData))
 
 First we need to convert different area unit into a same one. Looking at count of each unit, acre is the major one, so we decide to map other units to acre. According to G4USERSG.pdf, we create a map between each unit to a multiplier of it when it's converted to acre (the "Other" unit is treated as NA). Then join the map onto `sec8b` and multiply with original land size to get unified land size (values greater than 1e+100 are treated as NA). We noticed that some households have multiple entries of land size info and among them there is NA value. So we convert NA to 0 so we can sum up land size for each household. Eventually, household with land size less than 0.5 acre are filtered out because that's probably not a real farm.
 
+Area unit | To Acre
+----------|------------
+1 Acre    | 1 Acre
+1 Poles   | 1 Acre
+1 Ropes   | 1/9 Acre
+Other     | NA
+
 ```{r}
 # map land size units to acre with a multiplier (s8bq4bm)
 # the "Other" unit is treated as NA
@@ -118,7 +125,9 @@ hh_basic_info <- sec0a %>%
 
 ## Tidy household member information
 
-Select information for household members and calculate mean, max and min age of household.
+We picked some data about household members such as sex, age and education and aggregate them on household level to analyze the effect of variety of household members on agricultural profit.
+
+Select household members sex and age information and calculate mean, max and min age of household. The relation (`rel`) data is used to filter by head of household later.
 
 ```{r}
 # household member information
@@ -134,7 +143,7 @@ hhm_info <- sec1 %>%
   select(-sex, -agey)
 ```
 
-Based on information from these two below sources, we categorize educational qualification (`s2aq3`) into 5 levels: "None", "BasicEducation", "SecondaryEducation", "TertiaryEducation" and "Other". For missing value in `s2aq3`, it's because these people never attended school (`s2aq1 == 2`). In this case we set education to None.
+For education data, we categorize educational qualification (`s2aq3`) into 5 levels: "None", "BasicEducation", "SecondaryEducation", "TertiaryEducation" and "Other", based on information from the two sources below. For missing value in `s2aq3`, it's because these people never attended school (`s2aq1 == 2`). In this case we set education to None.
 
 [Education System in Ghana](https://www.scholaro.com/pro/Countries/Ghana/Education-System)
 
@@ -183,13 +192,18 @@ hhm_educ <- sec2a %>%
   select(-s2aq1, -s2aq3, -s2aq3l)
 ```
 
-Then we join household member info and education info, and use info of household head as a representative of the household.
+Then we join household member info and education info, and use data from head of household (`rel == 1`) as a representative of the household.
 
 ```{r}
 hh_head_info <- hhm_info %>%
   inner_join(hhm_educ, by=c("clust", "nh", "pid")) %>%
   filter(rel == 1) %>% # head of household
   select(-pid, -rel)
+```
+
+## Tidy agricultural characteristics information
+
+```{r}
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.

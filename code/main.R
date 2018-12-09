@@ -145,7 +145,7 @@ hh_livestock_info <- sec8a2 %>%
          sep = "")
 summary(hh_livestock_info)
 
-# count household agric equipment type
+# count household agricultural equipment type
 # not including count of each equipment because of too many missing value (s8aq34)
 hh_equip_info <- sec8a3 %>%
   select(clust, nh, eqcdown, s8aq34) %>%
