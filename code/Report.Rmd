@@ -1,0 +1,129 @@
+---
+title: "Influencing Factors of Ghana Agricultural Profits Analysis"
+by: Group 07 - Siqi Zhang, Huibo Jia, Qiyu Ye, Mark Russeff
+output: html_notebook
+---
+
+```{r echo = FALSE, warning = FALSE}
+library(tidyverse)
+library(haven)
+library(car)
+library(here)
+
+setwd(here())
+
+source(here("code","helperFunc.R"))
+```
+
+## Read data
+
+After reading through the documentation, we determined these data files contain the data we want to use to analyze the influencing factors of Ghana agricultural profits
+
+```{r echo = FALSE}
+# list of data file pairs to read, first is subfolder, second is file name
+datafiles <- list(c("aggregates/", "agg2"),
+                  c("", "sec8b"),
+                  c("", "sec0a"),
+                  c("", "sec1"),
+                  c("", "sec2a"),
+                  c("", "sec8a2"),
+                  c("", "sec8a3"),
+                  c("", "sec8c1"),
+                  c("", "sec8c2"),
+                  c("community/", "cs2"))
+
+invisible(sapply(datafiles, readRawData))
+```
+
+## Calculate agricultural profit per area unit
+
+First we need to convert different area unit into a same one. Looking at count of each unit, acre is the major one, so we decide to map other units to acre. According to G4USERSG.pdf, we create a map between each unit to a multiplier of it when it's converted to acre (the "Other" unit is treated as NA). Then join the map onto `sec8b` and multiply with original land size to get unified land size (values greater than 1e+100 are treated as NA). We noticed that some households have multiple entries of land size info and among them there is NA value. So we convert NA to 0 so we can sum up land size for each household. Eventually, household with land size less than 0.5 acre are filtered out because that's probably not a real farm.
+
+```{r}
+# map land size units to acre with a multiplier (s8bq4bm)
+# the "Other" unit is treated as NA
+table(sec8b$s8bq4b)
+land_size_unit_map <- data.frame("s8bq4b" = as.double(c(1:4)),
+                                 "s8bq4bm" = c(1, 1, 1/9, NA))
+```
+```{r}
+# convert all land size to acre
+land_size_info <- sec8b %>%
+  select(clust, nh, s8bq4a, s8bq4b) %>%
+  mutate(s8bq4a = ifelse(s8bq4a > 1e+100, NA, s8bq4a),
+         s8bq4b = ifelse(s8bq4b > 1e+100, NA, s8bq4b)) %>%
+  left_join(land_size_unit_map) %>%
+  # s8bq4ac is corrected s8bq4a, which is land size in acre
+  mutate(s8bq4ac = s8bq4a * s8bq4bm) %>%
+  # convert NA to 0 to calculate sum of land size for each household
+  replace(., is.na(.), 0) %>%
+  group_by(clust, nh) %>%
+  summarise(landSize = sum(s8bq4ac)) %>%
+  # remove household with small land size
+  filter(landSize >= 0.5)
+```
+
+Then we use agricultural income minus depreciation of farm equipment (`agri1 - hhagdepn`) as household profit, and devide it by household land size to get profit per area unit. `agg2` does not have NA value so no need to clean up.
+
+```{r}
+# identify count of NAs in agg2
+colSums(is.na(agg2))
+
+# check correlation between agricultural income and corrected agricultural income
+cor(agg2$agri1, agg2$agri1c)
+```
+```{r}
+# resolve warnings during join
+attr(agg2$clust, "label") <- "Enumeration Area number"
+attr(agg2$nh, "label") <- "Household ID"
+
+# calculate household agri profit per acre
+# because the above correlations are both 1,
+# use only "agri1" to calculate agricultural profit
+hh_profit_info <- agg2 %>%
+  select(clust, nh, agri1, hhagdepn) %>%
+  filter(agri1 != 0) %>%
+  inner_join(land_size_info, by = c("clust", "nh")) %>%
+  mutate(profit = (agri1 - hhagdepn) / landSize) %>%
+  select(-agri1, -hhagdepn, -landSize)
+
+attr(hh_profit_info$profit, "label") <- "HH agri profit"
+```
+
+## Tidy household basic information
+
+For basic household information, we are interested in language of respondent (values greater than 1e+100 are treated as "Unknown" language), ecological zone number and 3 different locality classifications. All variables are converted to factor type so they could be used as dummy variables in linear model.
+
+```{r}
+hh_basic_info <- sec0a %>%
+  select(region, district, eanum, clust, nh, reslan, ez:loc3) %>%
+  mutate(reslan = cleanAndFactorize(reslan, 1e+100, 99,
+                                    levels = as.character(c(1:8, 99)),
+                                    labels = c("English", "Akan", "Ewe", "GaAdangbe",
+                                               "Dagbani", "Hausa", "Nzema", "Other", "Unknown")),
+         ez = factor(ez,
+                     levels = as.character(c(1:3)),
+                     labels = c("Coastal", "Forest", "Savannah")),
+         loc2 = factor(loc2,
+                       levels = as.character(c(1,2)),
+                       labels = c("Urban", "Rural")),
+         loc5 = factor(loc5, 
+                       levels = as.character(c(1:5)),
+                       labels = c("Accra", "OtherUrban", "RuralCoastal",
+                                  "RuralForest", "RuralSavannah")),
+         loc3 = factor(loc3,
+                       levels = as.character(c(1:3)),
+                       labels = c("Accra", "OtherUrban", "Rural"))
+  )
+```
+
+## Tidy household member information
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

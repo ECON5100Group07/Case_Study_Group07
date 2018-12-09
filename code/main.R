@@ -3,7 +3,6 @@ library(haven)
 library(car)
 library(here)
 
-## ----set directory to this project--------------------------------------------------
 setwd(here())
 
 source(here("code","helperFunc.R"))
@@ -21,14 +20,12 @@ datafiles <- list(c("aggregates/", "agg2"),
                   c("", "sec8c2"),
                   c("community/", "cs2"))
 
-sapply(datafiles, readRawData)
+invisible(sapply(datafiles, readRawData))
 
 ## ----calculate agricultural profit per area unit (the y variable)-------------------
-# identify count of NAs in agg2
-colSums(is.na(agg2))
-
 # map land size units to acre with a multiplier (s8bq4bm)
 # the "Other" unit is treated as NA
+table(sec8b$s8bq4b)
 land_size_unit_map <- data.frame("s8bq4b" = as.double(c(1:4)),
                                  "s8bq4bm" = c(1, 1, 1/9, NA))
 
@@ -47,12 +44,15 @@ land_size_info <- sec8b %>%
   # remove household with small land size
   filter(landSize >= 0.5)
 
-# resolve warnings
-attr(agg2$clust, "label") <- "Enumeration Area number"
-attr(agg2$nh, "label") <- "Household ID"
+# identify count of NAs in agg2
+colSums(is.na(agg2))
 
 # check correlation between agricultural income and corrected agricultural income
 cor(agg2$agri1, agg2$agri1c)
+
+# resolve warnings during join
+attr(agg2$clust, "label") <- "Enumeration Area number"
+attr(agg2$nh, "label") <- "Household ID"
 
 # calculate household agri profit per acre
 # because the above correlations are both 1,
@@ -66,7 +66,7 @@ hh_profit_info <- agg2 %>%
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit"
 
-## ----tidy household information----------------------------------------------------------
+## ----tidy household basic information----------------------------------------------------------
 # household basic information
 hh_basic_info <- sec0a %>%
   select(region, district, eanum, clust, nh, reslan, ez:loc3) %>%
@@ -93,8 +93,7 @@ hh_basic_info <- sec0a %>%
 # household member information
 hhm_info <- sec1 %>%
   select(clust, nh, pid, sex, agey, rel) %>%
-  #filter(agey >= 15 & agey <= 65) %>%
-  group_by(clust,nh) %>%
+  group_by(clust, nh) %>%
   mutate(female = sex == 2,
          age = agey,
          avgAge = mean(agey),
@@ -145,7 +144,6 @@ hh_livestock_info <- sec8a2 %>%
          fill = 0,
          sep = "")
 summary(hh_livestock_info)
-
 
 # count household agric equipment type
 # not including count of each equipment because of too many missing value (s8aq34)
