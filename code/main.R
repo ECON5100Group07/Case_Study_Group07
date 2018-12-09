@@ -2,7 +2,6 @@ library(tidyverse)
 library(haven)
 library(car)
 library(here)
-library(GGally)
 
 ## ----set directory to this project--------------------------------------------------
 setwd(here())
