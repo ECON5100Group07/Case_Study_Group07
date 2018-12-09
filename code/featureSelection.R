@@ -55,11 +55,11 @@ cor(agg2$agri1, agg2$agri1c)
 # because the above correlations are both 1,
 # use only "agri1" to calculate agricultural profit
 hh_profit_info <- agg2 %>%
-  select(clust, nh, agri1) %>%
+  select(clust, nh, agri1, hhagdepn) %>%
   filter(agri1 != 0) %>%
   inner_join(land_size_info, by = c("clust", "nh")) %>%
-  mutate(profit = agri1 / landSize) %>%
-  select(-agri1, -landSize)
+  mutate(profit = (agri1 - hhagdepn) / landSize) %>%
+  select(-agri1, -hhagdepn, -landSize)
 
 attr(hh_profit_info$profit, "label") <- "HH agri profit"
 
