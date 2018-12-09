@@ -270,14 +270,17 @@ checkCorrVarAndTestHnull(hh_profit_model_r4)
 # 01.unrestricted model:
 plotResiduals(hh_profit, hh_profit_model_ur, "lightblue", "UR")
 
-# 02.restricted model:
+# 02.restricted model with top features from agricultural characteristics information:
+plotResiduals(hh_profit, hh_profit_model_topfeatures, "purple", "TOP")
+
+# 03.restricted model with significant variables:
 plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1")
 
-# 03.restricted model with only education and local characteristic information:
+# 04.restricted model with only education and local characteristic information:
 plotResiduals(hh_profit, hh_profit_model_r2, "yellow", "R2")
 
-# 04.restricted model after removing loc5 and loc3:
+# 05.restricted model after removing loc5 and loc3:
 plotResiduals(hh_profit, hh_profit_model_r3, "orange", "R3")
 
-# 04.restricted model with educ * age:
+# 06.restricted model with educ * age:
 plotResiduals(hh_profit, hh_profit_model_r4, "pink", "R4")
