@@ -51,3 +51,26 @@ findAbsoluteCorrelation <- function(inputFeatures) {
   df <- df[order(df$correlation, decreasing = T),]
   return (df)
 }
+
+# plot standard residuals and residuals vs fitted values
+plotResiduals <- function(data, model, fill, modelName) {
+  # standard residuals
+  data <- data %>%
+    mutate(
+      stand_res = rstandard(model)
+    )
+  p1 <- data %>% ggplot(aes(x = stand_res)) +
+    geom_histogram(colour = "black", fill = fill) +
+    xlab("Standardized residuals") +
+    ggtitle(paste("Standardized residuals of", modelName, "model", sep = " "))
+  ggsave(here("figures", paste("diag", tolower(modelName), "stand_res.png", sep = "_")))
+  
+  # residuals vs fitted values
+  data$fitted <- model$fitted.values
+  data$residuals <- model$residuals
+  p2 <- data %>% ggplot(aes(x = fitted, y = residuals)) +
+    geom_point(colour = fill) + ggtitle(paste("Homoskedasticity of", modelName, "model", sep = " "))
+  ggsave(here("figures", paste("diag", tolower(modelName), "homoskedasticity.png", sep = "_")))
+  
+  return (list(p1, p2))
+}
