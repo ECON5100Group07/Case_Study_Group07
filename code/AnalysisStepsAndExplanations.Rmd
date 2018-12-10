@@ -1,6 +1,7 @@
 ---
-title: "Influencing Factors of Ghana Agricultural Profits Analysis"
-by: Group 07 - Siqi Zhang, Huibo Jia, Qiyu Ye, Mark Russeff
+title: "Ghana Agricultural Profits Analysis Steps and Explanations"
+author: Group 07 - Siqi Zhang, Huibo Jia, Qiyu Ye, Mark Russeff
+date: 12-06-2018
 output: html_notebook
 ---
 
@@ -364,7 +365,7 @@ all_correlations <- findAbsoluteCorrelation(hh_profit_agri)
 hh_profit_agri_topFeatures <- hh_profit[c("profit", all_correlations$colName[1:15])]
 hh_profit_model_topfeatures <- lm(profit ~ . , data = hh_profit_agri_topFeatures)
 checkCorrVarAndTestHnull(hh_profit_model_topfeatures)
-suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "green", "TOP"))
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "purple", "TOP"))
 ```
 
 #### Unrestricted model for rural area (RURAL)
