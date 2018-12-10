@@ -215,15 +215,15 @@ hh_profit <- hh_profit_info %>%
   inner_join(hh_all_info, by=c("clust", "nh")) %>%
   select(-region, -district, -eanum, -clust, -nh)
 
-####filter out rural and urban data from hh_profit
+# filter out rural and urban data from hh_profit
 hh_profit_rural <- hh_profit %>%
   filter(loc2 == "Rural")
-# remove factor column with only one value
+# remove factor type column with only one value
 hh_profit_rural <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_rural)
 
 hh_profit_urban <- hh_profit %>%
   filter(loc2 == "Urban")
-# remove factor column with only one value
+# remove factor type column with only one value
 hh_profit_urban <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_urban)
 
 # fit unrestricted model and test hypothesis

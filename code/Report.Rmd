@@ -300,8 +300,29 @@ hh_comm_info <- cs2 %>%
   select(-s2q19, -s2q23)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+## Combine all information and fit model
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+Combine household basic info, household member info (using head as representitive), community info and household agricultural characteristics info together with inner join, because if a household does not have all 4 info, we don't want to use its data in our model fitting. From the combined data, we also created two subset for rural and urban areas. We are interested to see if the two ares have different influencing factors on profit.
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r warning = FALSE}
+hh_all_info <- hh_basic_info %>%
+  inner_join(hh_head_info, by=c("clust", "nh")) %>%
+  inner_join(hh_comm_info, by=c("region", "district", "eanum")) %>%
+  inner_join(hh_agri_info, by=c("clust", "nh"))
+
+hh_profit <- hh_profit_info %>%
+  inner_join(hh_all_info, by=c("clust", "nh")) %>%
+  select(-region, -district, -eanum, -clust, -nh)
+
+# filter out rural and urban data from hh_profit
+hh_profit_rural <- hh_profit %>%
+  filter(loc2 == "Rural")
+# remove factor type column with only one value
+hh_profit_rural <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_rural)
+
+hh_profit_urban <- hh_profit %>%
+  filter(loc2 == "Urban")
+# remove factor type column with only one value
+hh_profit_urban <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_urban)
+```
+
