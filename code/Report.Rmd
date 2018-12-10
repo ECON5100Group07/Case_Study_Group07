@@ -390,3 +390,22 @@ checkCorrVarAndTestHnull(hh_profit_model_urban)
 dim(hh_profit_urban)
 ```
 
+#### Restricted model with only education and local characteristic information
+
+We also want to see how education and local characteristic info alone influence profit. Looking at hypothesis test result, loc5 and loc3 are correlated with other variables. So remove them and fit model again.
+
+```{r}
+hh_profit_model_r2 <- lm(profit ~ educ + ez + loc2 + loc5 + loc3 + market + transport, 
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_r2)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r2, "yellow", "R2"))
+```
+
+```{r}
+# remove loc5 and loc3 and fit model again
+hh_profit_model_r3 <- lm(profit ~ educ + ez + loc2 + market + transport, 
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_r3)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r3, "orange", "R3"))
+```
+
