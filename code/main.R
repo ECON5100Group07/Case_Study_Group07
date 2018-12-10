@@ -131,6 +131,7 @@ hh_head_info <- hhm_info %>%
   select(-pid, -rel)
 
 ## ----tidy agricultural characteristics information---------------------------------------
+table(sec8a2$s8aq22b)
 # spread livestock count and count livestock type
 # since there are too many missing value in livestock unit of messaure (s8aq22b),
 # we assume same livestock type has same unit,
@@ -145,11 +146,10 @@ hh_livestock_info <- sec8a2 %>%
          sep = "")
 summary(hh_livestock_info)
 
-# count household agricultural equipment type
-# not including count of each equipment because of too many missing value (s8aq34)
+# spread agricultural equipment count and count agricultural equipment type
 hh_equip_info <- sec8a3 %>%
   select(clust, nh, eqcdown, s8aq34) %>%
-  replace(., . > 1e+100, 0)%>%
+  replace(., . > 1e+100, 0) %>%
   filter(s8aq34 != 0) %>%
   group_by(clust, nh) %>%
   mutate(equipTypeCount = n()) %>%
@@ -160,8 +160,11 @@ hh_equip_info <- sec8a3 %>%
 summary(hh_equip_info)
 
 # spread household havested crop count and count havested crop type
+# some households have multiple entries of same crop type, for example:
+(sec8c1 %>% select(clust, nh, cropcd, s8cq3a))[c(377, 378),]
+# so need to sum up quantity of same crop type
 hh_crop_info <- sec8c1 %>%
-  select(clust, nh, cropcd, s8cq3a, s8cq17a, s8cq17b) %>%
+  select(clust, nh, cropcd, s8cq3a) %>%
   replace(., . > 1e+100, 0) %>%
   group_by(clust, nh, cropcd) %>%
   # sum up quantity of same crop type
@@ -187,6 +190,7 @@ hh_root_info <- sec8c2 %>%
          value = s8cq21ac,
          fill = 0,
          sep = "")
+summary(hh_root_info)
 
 hh_agri_info <- hh_livestock_info %>%
   full_join(hh_equip_info, by=c("clust", "nh")) %>%

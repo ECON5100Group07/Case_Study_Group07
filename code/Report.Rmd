@@ -203,7 +203,89 @@ hh_head_info <- hhm_info %>%
 
 ## Tidy agricultural characteristics information
 
+We included agricultural characteristics information in our analysis as well, includign Livestock and Fishing (`sec8a2`), Agricultural equipment (`sec8a3`) and Crops (`sec8c1` and `sec8c2`). We would like to see if any certain types of livestock, equipment and/or crop would contribute a lot to profit.
+
+For livestock data, we found that there are too many missing values (value greater than 1e+100) in its unit of messaure (`s8aq22b`). So we decided to spread livestock count by livestock type so that each livestock type is a column with the count as its value, and assume same livestock type has same unit of messaure so we can compare accros them. We also created a column for the count of different livestock types each household owns.
+
 ```{r}
+table(sec8a2$s8aq22b)
+# spread livestock count and count livestock type
+# since there are too many missing value in livestock unit of messaure (s8aq22b),
+# we assume same livestock type has same unit,
+# and we only take livestock count (s8aq22a) into consideration
+hh_livestock_info <- sec8a2 %>%
+  select(clust, nh, livstcd, s8aq22a) %>%
+  group_by(clust, nh) %>%
+  mutate(livstcdTypeCount = n()) %>%
+  spread(key = livstcd,
+         value = s8aq22a,
+         fill = 0,
+         sep = "")
+summary(hh_livestock_info)
+```
+
+Similarly we process the agricultural equipment data.
+
+```{r}
+# spread agricultural equipment count and count agricultural equipment type
+hh_equip_info <- sec8a3 %>%
+  select(clust, nh, eqcdown, s8aq34) %>%
+  replace(., . > 1e+100, 0) %>%
+  filter(s8aq34 != 0) %>%
+  group_by(clust, nh) %>%
+  mutate(equipTypeCount = n()) %>%
+  spread(key = eqcdown,
+         value = s8aq34,
+         fill = 0,
+         sep = "")
+summary(hh_equip_info)
+```
+
+For crop data, we noticed that some households have multiple entries of same crop type. So we need to group by household and crop type and sum up across same crop type.
+
+```{r}
+# spread household havested crop count and count havested crop type
+# some households have multiple entries of same crop type, for example:
+(sec8c1 %>% select(clust, nh, cropcd, s8cq3a))[c(377, 378),]
+# so need to sum up quantity of same crop type
+hh_crop_info <- sec8c1 %>%
+  select(clust, nh, cropcd, s8cq3a) %>%
+  replace(., . > 1e+100, 0) %>%
+  group_by(clust, nh, cropcd) %>%
+  # sum up quantity of same crop type
+  summarise(s8cq3ac = sum(s8cq3a)) %>% 
+  group_by(clust, nh) %>%
+  mutate(cropTypeCount = n()) %>%
+  spread(key = cropcd,
+         value = s8cq3ac,
+         fill = 0,
+         sep = "")
+summary(hh_crop_info)
+
+# spread household havested root count and count havested root type
+hh_root_info <- sec8c2 %>%
+  select(clust, nh, rootcd, s8cq21a) %>%
+  replace(., . > 1e+100, 0) %>%
+  group_by(clust, nh, rootcd) %>%
+  # sum up quantity of same root type
+  summarise(s8cq21ac = sum(s8cq21a)) %>% 
+  group_by(clust, nh) %>%
+  mutate(rootTypeCount = n()) %>%
+  spread(key = rootcd,
+         value = s8cq21ac,
+         fill = 0,
+         sep = "")
+summary(hh_root_info)
+```
+
+Do a full join to combine all 4 trunk of data together. Since not every household have entries in all 4 type of agricultural characteristics, we assume the missing value simply means they just don't have that type and replace it with 0.
+
+```{r}
+hh_agri_info <- hh_livestock_info %>%
+  full_join(hh_equip_info, by=c("clust", "nh")) %>%
+  full_join(hh_crop_info, by=c("clust", "nh")) %>%
+  full_join(hh_root_info, by=c("clust", "nh")) %>%
+  replace(., is.na(.), 0)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
