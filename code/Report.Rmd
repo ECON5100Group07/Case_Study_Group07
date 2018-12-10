@@ -288,6 +288,18 @@ hh_agri_info <- hh_livestock_info %>%
   replace(., is.na(.), 0)
 ```
 
+## Tidy community information
+
+We chose market and transport information from the community data and convert them to logical value.
+
+```{r}
+hh_comm_info <- cs2 %>%
+  select(region, district, eanum, s2q19, s2q23) %>%
+  mutate(market = ifelse(s2q19 == 1, TRUE, FALSE),
+         transport = ifelse(s2q23 == 1, TRUE, FALSE)) %>%
+  select(-s2q19, -s2q23)
+```
+
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
