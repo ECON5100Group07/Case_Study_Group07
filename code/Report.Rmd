@@ -332,7 +332,7 @@ Now we fit linear regression models with different variables and do regression d
 
 #### Unrestricted model
 
-First we fit an unrestricted model. Looking at its summary, there are some significant variables. Looking at hypothesis test result, there are correlated variables in this model. So we should fit a restriced model. Following the model summary is the histogram of standardized residuals and plot of residuals vs fitted values.
+First we fit an unrestricted model. Looking at its summary, there are some significant variables. Looking at null hypothesis test result, there are correlated variables in this model. So we should fit a restriced model. Following the model summary is the histogram of standardized residuals and plot of residuals vs fitted values.
 
 ```{r}
 hh_profit_model_ur <- lm(profit ~ .,
@@ -354,7 +354,7 @@ checkCorrVarAndTestHnull(hh_profit_model_r1)
 suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1"))
 ```
 
-#### Restricted model with top features from agricultural characteristics information
+#### Restricted model with top features from agricultural characteristics information (TOP)
 
 We are also interested to see how will the model perform if fitted only with top 15 features from agricultural characteristics information. These top features are the variables that have higher correlation with profit, no matter it's positive or negative correlation.
 
@@ -367,7 +367,7 @@ checkCorrVarAndTestHnull(hh_profit_model_topfeatures)
 suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "green", "TOP"))
 ```
 
-#### Unrestricted model for rural area
+#### Unrestricted model for rural area (RURAL)
 
 Fit unrestricted model for rural area profit.
 
@@ -380,7 +380,7 @@ suppressWarnings(plotResiduals(hh_profit_rural, hh_profit_model_rural, "green", 
 
 #### Unrestricted model for urban area
 
-Fit unrestricted model for urban area profit. We notice that the adjusted R square is really low, and there are a lot of correlated variable. By looking at data size, we see that there are less observations than variables for urban are profit data. So we don't have enough data to fit a model.
+Fit unrestricted model for urban area profit. We notice that the adjusted R squared is really low, and there are a lot of correlated variable. By looking at data size, we see that there are less observations than variables for urban are profit data. So we don't have enough data to fit a model.
 
 ```{r}
 hh_profit_model_urban <- lm(profit ~ .,
@@ -390,9 +390,9 @@ checkCorrVarAndTestHnull(hh_profit_model_urban)
 dim(hh_profit_urban)
 ```
 
-#### Restricted model with only education and local characteristic information
+#### Restricted model with only education and local characteristic information (R2, R3)
 
-We also want to see how education and local characteristic info alone influence profit. Looking at hypothesis test result, loc5 and loc3 are correlated with other variables. So remove them and fit model again.
+We also want to see how education and local characteristic info alone influence profit. Looking at hypothesis test result, loc5 and loc3 are correlated with other variables. So remove them and fit model again. Looking at the summary, there are not many significant variables, also the R squared is very low.
 
 ```{r}
 hh_profit_model_r2 <- lm(profit ~ educ + ez + loc2 + loc5 + loc3 + market + transport, 
@@ -409,3 +409,13 @@ checkCorrVarAndTestHnull(hh_profit_model_r3)
 suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r3, "orange", "R3"))
 ```
 
+#### Restricted model with educ * age (R4)
+
+Although the education in the above model is not significant, we are curious to see if educ and age together would become significant. So we fit a model with `educ * age`. However, looking at the summary it's still not significant.
+
+```{r}
+hh_profit_model_r4 <- lm(profit ~ educ * age + female + ez + loc2 + market + transport, 
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_r4)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r4, "pink", "R4"))
+```
