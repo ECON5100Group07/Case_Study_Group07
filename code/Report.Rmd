@@ -332,12 +332,61 @@ Now we fit linear regression models with different variables and do regression d
 
 #### Unrestricted model
 
-First we fit an unrestricted model.
+First we fit an unrestricted model. Looking at its summary, there are some significant variables. Looking at hypothesis test result, there are correlated variables in this model. So we should fit a restriced model. Following the model summary is the histogram of standardized residuals and plot of residuals vs fitted values.
 
 ```{r}
 hh_profit_model_ur <- lm(profit ~ .,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_ur)
 suppressWarnings(plotResiduals(hh_profit, hh_profit_model_ur, "lightblue", "UR"))
+```
+
+#### Restricted model with significant variables (R1)
+
+We pick the significant variables from the above unrestricted model and fit a restricted model.
+
+```{r}
+hh_profit_model_r1 <- lm(profit ~ reslan + ez + age + market + livstcd5 + livstcd6 + livstcd7 + livstcd10 +
+                           equipTypeCount + eqcdown61 + cropcd5 + cropcd8 + cropcd11 + cropcd25 + cropcd29 +
+                           rootcd7 + rootcd18 + rootcd20 + rootcd27 + rootcd33 + rootcd36,
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_r1)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1"))
+```
+
+#### Restricted model with top features from agricultural characteristics information
+
+We are also interested to see how will the model perform if fitted only with top 15 features from agricultural characteristics information. These top features are the variables that have higher correlation with profit, no matter it's positive or negative correlation.
+
+```{r}
+hh_profit_agri <- hh_profit[, -c(2:14)] # get agricultural characteristics variables
+all_correlations <- findAbsoluteCorrelation(hh_profit_agri)
+hh_profit_agri_topFeatures <- hh_profit[c("profit", all_correlations$colName[1:15])]
+hh_profit_model_topfeatures <- lm(profit ~ . , data = hh_profit_agri_topFeatures)
+checkCorrVarAndTestHnull(hh_profit_model_topfeatures)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "green", "TOP"))
+```
+
+#### Unrestricted model for rural area
+
+Fit unrestricted model for rural area profit.
+
+```{r}
+hh_profit_model_rural <- lm(profit ~ .,
+                            data = hh_profit_rural)
+checkCorrVarAndTestHnull(hh_profit_model_rural)
+suppressWarnings(plotResiduals(hh_profit_rural, hh_profit_model_rural, "green", "RURAL"))
+```
+
+#### Unrestricted model for urban area
+
+Fit unrestricted model for urban area profit. We notice that the adjusted R square is really low, and there are a lot of correlated variable. By looking at data size, we see that there are less observations than variables for urban are profit data. So we don't have enough data to fit a model.
+
+```{r}
+hh_profit_model_urban <- lm(profit ~ .,
+                            data = hh_profit_urban)
+checkCorrVarAndTestHnull(hh_profit_model_urban)
+# check data size
+dim(hh_profit_urban)
 ```
 

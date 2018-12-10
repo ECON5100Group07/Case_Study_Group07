@@ -242,7 +242,7 @@ checkCorrVarAndTestHnull(hh_profit_model_r1)
 suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1"))
 
 # restricted model with top features from agricultural characteristics information
-hh_profit_agri <- hh_profit[, -c(2:14)]
+hh_profit_agri <- hh_profit[, -c(2:14)] # get agricultural characteristics variables
 all_correlations <- findAbsoluteCorrelation(hh_profit_agri)
 hh_profit_agri_topFeatures <- hh_profit[c("profit", all_correlations$colName[1:15])]
 hh_profit_model_topfeatures <- lm(profit ~ . , data = hh_profit_agri_topFeatures)
@@ -253,11 +253,14 @@ suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "purple",
 hh_profit_model_rural <- lm(profit ~ .,
                             data = hh_profit_rural)
 checkCorrVarAndTestHnull(hh_profit_model_rural)
+suppressWarnings(plotResiduals(hh_profit_rural, hh_profit_model_rural, "green", "RURAL"))
 
 # unrestricted model for urban area
 hh_profit_model_urban <- lm(profit ~ .,
                             data = hh_profit_urban)
 checkCorrVarAndTestHnull(hh_profit_model_urban)
+# check data size
+dim(hh_profit_urban)
 
 # restricted model with only education and local characteristic information
 hh_profit_model_r2 <- lm(profit ~ educ + ez + loc2 + loc5 + loc3 + market + transport, 
