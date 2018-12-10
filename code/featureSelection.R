@@ -14,10 +14,10 @@ readData <- function(path, namePattern) {
   }
 }
 
-readData("./glss4/raw_data", "./glss4/raw_data/+|.dta")
-readData("./glss4/raw_data/aggregates/", "./glss4/raw_data/aggregates/+|.dta")
-readData("./glss4/raw_data/community/", "./glss4/raw_data/community/+|.dta")
-readData("./glss4/prices/", "./glss4/prices/+|.dta")
+readData("./raw_data", "./raw_data/+|.dta")
+readData("./raw_data/aggregates/", "./raw_data/aggregates/+|.dta")
+readData("./raw_data/community/", "./raw_data/community/+|.dta")
+readData("./raw_data/prices/", "./raw_data/prices/+|.dta")
 
 ###### calculate profit: begin ######
 ## ----calculate agricultural profit per area unit (the y variable)-------------------
@@ -170,8 +170,8 @@ all_features <- hh_basic_info %>%
   AddFeature(inc7)  %>%
   AddFeature(GetAggFeature(inc8, "incliv"))  %>%
   AddFeature(GetAggFeature(inc9, "inceq"))  %>%
-  AddAggFeaturesFromFiles("./glss4/raw_data/aggregates/", "^subagg[0-9]*.dta") %>%
-  AddAggFeaturesFromFiles("./glss4/raw_data/aggregates/", "^agg[0-9]*.dta")
+  AddAggFeaturesFromFiles("./raw_data/aggregates/", "^subagg[0-9]*.dta") %>%
+  AddAggFeaturesFromFiles("./raw_data/aggregates/", "^agg[0-9]*.dta")
 
 
 
@@ -229,20 +229,3 @@ allCorrelationsFiltered <- all_correlations %>%
 topFeaturesFiltered <- hh_profit[c(allCorrelationsFiltered$colName[1:15])]
 hh_model_topfeatures_filtered <- lm(profit ~ ., data = topFeaturesFiltered)
 summary(hh_model_topfeatures_filtered)
-#AGRI1 = CRPINC1 + CRPINC2 + ROOTINC + INCOTHAG 
-# + TRCRPINC +HOMEPRO - EXPLAND - EXCROP - EXLIV 
-# - EXPFDPR1 - EXPFDPR2 
-# HHAGDEPN = DEPNEQ
-# 
-# # function to check correlated variables and test null hypothesis
-# 
-# ##### training model and check corelation #########
-# 
-# # fit unrestricted model and test hypothesis
-# hh_profit_model_ur <- lm(profit ~ .,
-#                          data = hh_profit)
-# summary(hh_profit_model_ur)
-# 
-# # hh_profit_model_filter <- lm(profit ~ reslan + impfood,
-# #                          data = hh_profit)
-# # summary(hh_profit_model_filter)
