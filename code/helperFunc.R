@@ -22,19 +22,19 @@ isSingleValueFactorColumn <- function(x) {
 # check correlated variables and test null hypothesis
 checkCorrVarAndTestHnull <- function(model) {
   model_summary <- summary(model)
-  print("===================== model summary =======================", quote = F)
+  writeLines("===================== model summary =======================")
   print(model_summary)
   model_alias <- alias(model)
-  print("===================== model alias =========================", quote = F)
-  print(model_alias)
   # if there is no correlated variables, test hypothesis
   if (is.null(model_alias$Complete)) {
     model_coef <- rownames(model_summary$coefficients)[-1]
     hnull <- paste0(model_coef, rep(" = 0", length(model_coef)))
-    print("===================== hypothesis test =====================", quote = F)
+    writeLines("===================== hypothesis test =====================")
     linearHypothesis(model, hnull)
   } else {
-    warning("There are correlated variables. See above model alias")
+    writeLines("===================== model alias =========================")
+    print(model_alias)
+    warning("There are correlated variables. See above model alias.")
   }
 }
 
@@ -63,14 +63,15 @@ plotResiduals <- function(data, model, fill, modelName) {
     geom_histogram(colour = "black", fill = fill) +
     xlab("Standardized residuals") +
     ggtitle(paste("Standardized residuals of", modelName, "model", sep = " "))
-  ggsave(here("figures", paste("diag", tolower(modelName), "stand_res.png", sep = "_")))
+  suppressMessages(ggsave(here("figures", paste("diag", tolower(modelName), "stand_res.png", sep = "_"))))
   
   # residuals vs fitted values
   data$fitted <- model$fitted.values
   data$residuals <- model$residuals
   p2 <- data %>% ggplot(aes(x = fitted, y = residuals)) +
     geom_point(colour = fill) + ggtitle(paste("Homoskedasticity of", modelName, "model", sep = " "))
-  ggsave(here("figures", paste("diag", tolower(modelName), "homoskedasticity.png", sep = "_")))
+  suppressMessages(ggsave(here("figures", paste("diag", tolower(modelName), "homoskedasticity.png", sep = "_"))))
   
-  return (list(p1, p2))
+  suppressMessages(print(p1))
+  suppressMessages(print(p2))
 }

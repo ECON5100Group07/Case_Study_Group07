@@ -300,9 +300,9 @@ hh_comm_info <- cs2 %>%
   select(-s2q19, -s2q23)
 ```
 
-## Combine all information and fit model
+## Combine all information
 
-Combine household basic info, household member info (using head as representitive), community info and household agricultural characteristics info together with inner join, because if a household does not have all 4 info, we don't want to use its data in our model fitting. From the combined data, we also created two subset for rural and urban areas. We are interested to see if the two ares have different influencing factors on profit.
+Combine household basic info, household member info (using head as representitive), community info and household agricultural characteristics info together by inner join, because if a household does not have all 4 info, we don't want to use its data in our model fitting. From the combined data, we also created two subset for rural and urban areas. We are interested to see if the two ares have different influencing factors on profit.
 
 ```{r warning = FALSE}
 hh_all_info <- hh_basic_info %>%
@@ -324,5 +324,20 @@ hh_profit_urban <- hh_profit %>%
   filter(loc2 == "Urban")
 # remove factor type column with only one value
 hh_profit_urban <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_urban)
+```
+
+## Fit model and regression diagnostics
+
+Now we fit linear regression models with different variables and do regression diagnostics.
+
+#### Unrestricted model
+
+First we fit an unrestricted model.
+
+```{r}
+hh_profit_model_ur <- lm(profit ~ .,
+                         data = hh_profit)
+checkCorrVarAndTestHnull(hh_profit_model_ur)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_ur, "lightblue", "UR"))
 ```
 

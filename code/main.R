@@ -205,7 +205,7 @@ hh_comm_info <- cs2 %>%
          transport = ifelse(s2q23 == 1, TRUE, FALSE)) %>%
   select(-s2q19, -s2q23)
 
-## ----combine all information and fit model-----------------------------------------------
+## ----combine all information-------------------------------------------------------------
 hh_all_info <- hh_basic_info %>%
   inner_join(hh_head_info, by=c("clust", "nh")) %>%
   inner_join(hh_comm_info, by=c("region", "district", "eanum")) %>%
@@ -226,65 +226,54 @@ hh_profit_urban <- hh_profit %>%
 # remove factor type column with only one value
 hh_profit_urban <- Filter(function(x) !isSingleValueFactorColumn(x), hh_profit_urban)
 
-# fit unrestricted model and test hypothesis
+## ----fit model and regression diagnostics--------------------------------------------------------------
+# unrestricted model
 hh_profit_model_ur <- lm(profit ~ .,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_ur)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_ur, "lightblue", "UR"))
 
-# fit rural model and test hypothesis
-hh_profit_model_rural <- lm(profit ~ .,
-                            data = hh_profit_rural)
-checkCorrVarAndTestHnull(hh_profit_model_rural)
-
-# fit urban model and test hypothesis
-hh_profit_model_urban <- lm(profit ~ .,
-                            data = hh_profit_urban)
-checkCorrVarAndTestHnull(hh_profit_model_urban)
-
-# fit model with top features from agricultural characteristics information
-hh_profit_agri <- hh_profit[, -c(2:14)]
-all_correlations <- findAbsoluteCorrelation(hh_profit_agri)
-hh_profit_agri_topFeatures <- hh_profit[c("profit", all_correlations$colName[1:15])]
-hh_profit_model_topfeatures <- lm(profit ~ . , data = hh_profit_agri_topFeatures)
-checkCorrVarAndTestHnull(hh_profit_model_topfeatures)
-
-# fit restricted model with significant variables and test hypothesis
+# restricted model with significant variables
 hh_profit_model_r1 <- lm(profit ~ reslan + ez + age + market + livstcd5 + livstcd6 + livstcd7 + livstcd10 +
                            equipTypeCount + eqcdown61 + cropcd5 + cropcd8 + cropcd11 + cropcd25 + cropcd29 +
                            rootcd7 + rootcd18 + rootcd20 + rootcd27 + rootcd33 + rootcd36,
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r1)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1"))
 
-# fit restricted model with only education and local characteristic information and test hypothesis
+# restricted model with top features from agricultural characteristics information
+hh_profit_agri <- hh_profit[, -c(2:14)]
+all_correlations <- findAbsoluteCorrelation(hh_profit_agri)
+hh_profit_agri_topFeatures <- hh_profit[c("profit", all_correlations$colName[1:15])]
+hh_profit_model_topfeatures <- lm(profit ~ . , data = hh_profit_agri_topFeatures)
+checkCorrVarAndTestHnull(hh_profit_model_topfeatures)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_topfeatures, "purple", "TOP"))
+
+# unrestricted model for rural area
+hh_profit_model_rural <- lm(profit ~ .,
+                            data = hh_profit_rural)
+checkCorrVarAndTestHnull(hh_profit_model_rural)
+
+# unrestricted model for urban area
+hh_profit_model_urban <- lm(profit ~ .,
+                            data = hh_profit_urban)
+checkCorrVarAndTestHnull(hh_profit_model_urban)
+
+# restricted model with only education and local characteristic information
 hh_profit_model_r2 <- lm(profit ~ educ + ez + loc2 + loc5 + loc3 + market + transport, 
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r2)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r2, "yellow", "R2"))
 
 # remove loc5 and loc3 and fit model again
 hh_profit_model_r3 <- lm(profit ~ educ + ez + loc2 + market + transport, 
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r3)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r3, "orange", "R3"))
 
-# fit a model with educ * age
+# restricted model with educ * age
 hh_profit_model_r4 <- lm(profit ~ educ * age + female + ez + loc2 + market + transport, 
                          data = hh_profit)
 checkCorrVarAndTestHnull(hh_profit_model_r4)
+suppressWarnings(plotResiduals(hh_profit, hh_profit_model_r4, "pink", "R4"))
 
-## ----regression diagnostics-----------------------------------------------
-# 01.unrestricted model:
-plotResiduals(hh_profit, hh_profit_model_ur, "lightblue", "UR")
-
-# 02.restricted model with top features from agricultural characteristics information:
-plotResiduals(hh_profit, hh_profit_model_topfeatures, "purple", "TOP")
-
-# 03.restricted model with significant variables:
-plotResiduals(hh_profit, hh_profit_model_r1, "darkblue", "R1")
-
-# 04.restricted model with only education and local characteristic information:
-plotResiduals(hh_profit, hh_profit_model_r2, "yellow", "R2")
-
-# 05.restricted model after removing loc5 and loc3:
-plotResiduals(hh_profit, hh_profit_model_r3, "orange", "R3")
-
-# 06.restricted model with educ * age:
-plotResiduals(hh_profit, hh_profit_model_r4, "pink", "R4")
