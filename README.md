@@ -1,6 +1,6 @@
 # Case_Study_Group07
 
-**Purpose: to finde what determines agricultural profit in Ghana.**
+**Purpose: to find what determines agricultural profit in Ghana.**
 
 ## Directory structure
 
